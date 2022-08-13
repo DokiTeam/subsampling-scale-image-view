@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
@@ -269,6 +270,9 @@ public class SubsamplingScaleImageView extends View {
     private Paint debugTextPaint;
     private Paint debugLinePaint;
     private Paint tileBgPaint;
+
+    @Nullable
+    private ColorFilter colorFilter;
 
     // Volatile fields used to reduce object creation
     private ScaleAndTranslate satTemp;
@@ -1229,6 +1233,9 @@ public class SubsamplingScaleImageView extends View {
             bitmapPaint.setAntiAlias(true);
             bitmapPaint.setFilterBitmap(true);
             bitmapPaint.setDither(true);
+            if (colorFilter != null) {
+                bitmapPaint.setColorFilter(colorFilter);
+            }
         }
         if ((debugTextPaint == null || debugLinePaint == null) && debug) {
             debugTextPaint = new Paint();
@@ -2833,6 +2840,23 @@ public class SubsamplingScaleImageView extends View {
      */
     public void setEagerLoadingEnabled(boolean eagerLoadingEnabled) {
         this.eagerLoadingEnabled = eagerLoadingEnabled;
+    }
+
+    /**
+     * Set or clear the colorfilter.
+     *
+     * @param colorFilter May be null. The new filter to be installed
+     */
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+        this.colorFilter = colorFilter;
+        if (bitmapPaint != null) {
+            bitmapPaint.setColorFilter(colorFilter);
+        }
+    }
+
+    @Nullable
+    public ColorFilter getColorFilter() {
+        return colorFilter;
     }
 
     /**
