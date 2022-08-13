@@ -1,15 +1,16 @@
 package com.davemorrissey.labs.subscaleview;
 
 import android.graphics.PointF;
-import androidx.annotation.NonNull;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-import java.io.Serializable;
+import androidx.annotation.NonNull;
 
 /**
  * Wraps the scale, center and orientation of a displayed image for easy restoration on screen rotate.
  */
 @SuppressWarnings("WeakerAccess")
-public class ImageViewState implements Serializable {
+public class ImageViewState implements Parcelable {
 
     private final float scale;
 
@@ -26,11 +27,44 @@ public class ImageViewState implements Serializable {
         this.orientation = orientation;
     }
 
+    public ImageViewState(Parcel in) {
+        scale = in.readFloat();
+        centerX = in.readFloat();
+        centerY = in.readFloat();
+        orientation = in.readInt();
+    }
+
+    public static final Creator<ImageViewState> CREATOR = new Creator<ImageViewState>() {
+        @Override
+        public ImageViewState createFromParcel(Parcel in) {
+            return new ImageViewState(in);
+        }
+
+        @Override
+        public ImageViewState[] newArray(int size) {
+            return new ImageViewState[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeFloat(scale);
+        dest.writeFloat(centerX);
+        dest.writeFloat(centerY);
+        dest.writeInt(orientation);
+    }
+
     public float getScale() {
         return scale;
     }
 
-    @NonNull public PointF getCenter() {
+    @NonNull
+    public PointF getCenter() {
         return new PointF(centerX, centerY);
     }
 
