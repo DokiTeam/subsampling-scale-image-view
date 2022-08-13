@@ -18,6 +18,8 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -31,6 +33,7 @@ import android.view.ViewParent;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.customview.view.AbsSavedState;
 import androidx.exifinterface.media.ExifInterface;
 
 import com.davemorrissey.labs.subscaleview.R.styleable;
@@ -2955,6 +2958,30 @@ public class SubsamplingScaleImageView extends View {
         return new AnimationBuilder(scale, sCenter);
     }
 
+    @Nullable
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        final ImageViewState state = getState();
+        if (state == null) {
+            return super.onSaveInstanceState();
+        }
+        final Parcelable superState = super.onSaveInstanceState();
+        return new SavedState(superState, state);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(final Parcelable state) {
+        if (!(state instanceof SavedState)) {
+            super.onRestoreInstanceState(state);
+            return;
+        }
+        final Parcelable superState = ((SavedState) state).getSuperState();
+        if (superState != AbsSavedState.EMPTY_STATE) {
+            super.onRestoreInstanceState(superState);
+        }
+        restoreState(((SavedState) state).imageViewState);
+    }
+
     /**
      * Builder class used to set additional options for a scale animation. Create an instance using {@link #animateScale(float)},
      * then set your options and call {@link #start()}.
@@ -3260,4 +3287,36 @@ public class SubsamplingScaleImageView extends View {
 
     }
 
+    private static class SavedState extends AbsSavedState implements Parcelable {
+
+        private final ImageViewState imageViewState;
+
+        protected SavedState(@Nullable Parcelable superState,
+                             @NonNull ImageViewState imageViewState) {
+            super(superState == null ? EMPTY_STATE : superState);
+            this.imageViewState = imageViewState;
+        }
+
+        protected SavedState(@NonNull Parcel source) {
+            super(source, SavedState.class.getClassLoader());
+            imageViewState = new ImageViewState(source);
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            super.writeToParcel(dest, flags);
+            imageViewState.writeToParcel(dest, flags);
+        }
+
+        public static final Parcelable.Creator<SavedState> CREATOR
+                = new Parcelable.Creator<SavedState>() {
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
+
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+    }
 }
