@@ -135,6 +135,10 @@ public class SubsamplingScaleImageView extends View {
     /** State change originated from a double tap zoom anim. */
     public static final int ORIGIN_DOUBLE_TAP_ZOOM = 4;
 
+    public static final int RESTORE_STRATEGY_NONE = 0;
+    public static final int RESTORE_STRATEGY_IMMEDIATE = 1;
+    public static final int RESTORE_STRATEGY_DEFERRED = 2;
+
     // Bitmap (preview or full image)
     private Bitmap bitmap;
 
@@ -277,6 +281,11 @@ public class SubsamplingScaleImageView extends View {
     @Nullable
     private ColorFilter colorFilter;
 
+    @Nullable
+    private ImageViewState pendingState;
+
+    private int stateRestoreStrategy = RESTORE_STRATEGY_NONE;
+
     // Volatile fields used to reduce object creation
     private ScaleAndTranslate satTemp;
     private Matrix matrix;
@@ -333,6 +342,9 @@ public class SubsamplingScaleImageView extends View {
             if (typedAttr.hasValue(styleable.SubsamplingScaleImageView_tileBackgroundColor)) {
                 setTileBackgroundColor(typedAttr.getColor(styleable.SubsamplingScaleImageView_tileBackgroundColor, Color.argb(0, 0, 0, 0)));
             }
+            if (typedAttr.hasValue(styleable.SubsamplingScaleImageView_restoreStrategy)) {
+                setStateRestoreStrategy(typedAttr.getInt(styleable.SubsamplingScaleImageView_restoreStrategy, RESTORE_STRATEGY_NONE));
+            }
             typedAttr.recycle();
         }
 
@@ -376,6 +388,13 @@ public class SubsamplingScaleImageView extends View {
         reset(false);
         invalidate();
         requestLayout();
+    }
+
+    public final void setStateRestoreStrategy(int strategy) {
+        if (strategy < RESTORE_STRATEGY_NONE || strategy > RESTORE_STRATEGY_DEFERRED) {
+            throw new IllegalArgumentException("Invalid strategy: " + strategy);
+        }
+        stateRestoreStrategy = strategy;
     }
 
     /**
@@ -424,7 +443,7 @@ public class SubsamplingScaleImageView extends View {
      * @param previewSource Optional source for a preview image to be displayed and allow interaction while the full size image loads.
      * @param state State to be restored. Nullable.
      */
-    public final void setImage(@NonNull ImageSource imageSource, ImageSource previewSource, ImageViewState state) {
+    public final void setImage(@NonNull ImageSource imageSource, ImageSource previewSource, @Nullable ImageViewState state) {
         //noinspection ConstantConditions
         if (imageSource == null) {
             throw new NullPointerException("imageSource must not be null");
@@ -432,6 +451,7 @@ public class SubsamplingScaleImageView extends View {
 
         reset(true);
         if (state != null) { restoreState(state); }
+        if (pendingState != null) { restoreState(pendingState); }
 
         if (previewSource != null) {
             if (imageSource.getBitmap() != null) {
@@ -1937,6 +1957,7 @@ public class SubsamplingScaleImageView extends View {
      */
     private void restoreState(ImageViewState state) {
         if (state != null && VALID_ORIENTATIONS.contains(state.getOrientation())) {
+            pendingState = null;
             this.orientation = state.getOrientation();
             this.pendingScale = state.getScale();
             this.sPendingCenter = state.getCenter();
@@ -2965,6 +2986,7 @@ public class SubsamplingScaleImageView extends View {
         if (state == null) {
             return super.onSaveInstanceState();
         }
+        pendingState = null;
         final Parcelable superState = super.onSaveInstanceState();
         return new SavedState(superState, state);
     }
@@ -2979,7 +3001,12 @@ public class SubsamplingScaleImageView extends View {
         if (superState != AbsSavedState.EMPTY_STATE) {
             super.onRestoreInstanceState(superState);
         }
-        restoreState(((SavedState) state).imageViewState);
+        final ImageViewState imageViewState = ((SavedState) state).imageViewState;
+        if (stateRestoreStrategy == RESTORE_STRATEGY_IMMEDIATE) {
+            restoreState(imageViewState);
+        } else if (stateRestoreStrategy == RESTORE_STRATEGY_DEFERRED) {
+            pendingState = imageViewState;
+        }
     }
 
     /**

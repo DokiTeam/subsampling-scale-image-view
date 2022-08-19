@@ -8,6 +8,11 @@
         <attr name="zoomEnabled" format="boolean"/>
         <attr name="quickScaleEnabled" format="boolean"/>
         <attr name="tileBackgroundColor" format="color"/>
+        <attr name="restoreStrategy" format="enum">
+            <enum value="0" name="none" />
+            <enum value="1" name="immediate" />
+            <enum value="2" name="deferred" />
+        </attr>
     </declare-styleable>
 
 </resources>
