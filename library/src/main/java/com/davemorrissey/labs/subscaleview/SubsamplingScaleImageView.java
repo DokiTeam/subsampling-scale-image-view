@@ -1,5 +1,6 @@
 package com.davemorrissey.labs.subscaleview;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -140,6 +141,7 @@ public class SubsamplingScaleImageView extends View {
     public static final int RESTORE_STRATEGY_DEFERRED = 2;
 
     // Bitmap (preview or full image)
+    @Nullable
     private Bitmap bitmap;
 
     // Whether the bitmap is a preview image
@@ -260,12 +262,15 @@ public class SubsamplingScaleImageView extends View {
     private boolean imageLoadedSent;
 
     // Event listener
+    @Nullable
     private OnImageEventListener onImageEventListener;
 
     // Scale and center listener
+    @Nullable
     private OnStateChangedListener onStateChangedListener;
 
     // Long click listener
+    @Nullable
     private OnLongClickListener onLongClickListener;
 
     // Long click handler
@@ -299,7 +304,7 @@ public class SubsamplingScaleImageView extends View {
     // A global preference for bitmap format, available to decoder classes that respect it
     private static Bitmap.Config preferredBitmapConfig;
 
-    public SubsamplingScaleImageView(Context context, AttributeSet attr) {
+    public SubsamplingScaleImageView(@NonNull Context context, @Nullable AttributeSet attr) {
         super(context, attr);
         density = getResources().getDisplayMetrics().density;
         setMinimumDpi(160);
@@ -412,7 +417,7 @@ public class SubsamplingScaleImageView extends View {
      * @param imageSource Image source.
      * @param state State to be restored. Nullable.
      */
-    public final void setImage(@NonNull ImageSource imageSource, ImageViewState state) {
+    public final void setImage(@NonNull ImageSource imageSource, @Nullable ImageViewState state) {
         setImage(imageSource, null, state);
     }
 
@@ -426,7 +431,7 @@ public class SubsamplingScaleImageView extends View {
      * @param imageSource Image source. Dimensions must be declared.
      * @param previewSource Optional source for a preview image to be displayed and allow interaction while the full size image loads.
      */
-    public final void setImage(@NonNull ImageSource imageSource, ImageSource previewSource) {
+    public final void setImage(@NonNull ImageSource imageSource, @Nullable ImageSource previewSource) {
         setImage(imageSource, previewSource, null);
     }
 
@@ -443,7 +448,7 @@ public class SubsamplingScaleImageView extends View {
      * @param previewSource Optional source for a preview image to be displayed and allow interaction while the full size image loads.
      * @param state State to be restored. Nullable.
      */
-    public final void setImage(@NonNull ImageSource imageSource, ImageSource previewSource, @Nullable ImageViewState state) {
+    public final void setImage(@NonNull ImageSource imageSource, @Nullable ImageSource previewSource, @Nullable ImageViewState state) {
         //noinspection ConstantConditions
         if (imageSource == null) {
             throw new NullPointerException("imageSource must not be null");
@@ -677,6 +682,7 @@ public class SubsamplingScaleImageView extends View {
     /**
      * Handle touch events. One finger pans, and two finger pinch and zoom plus panning.
      */
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
         // During non-interruptible anims, ignore all touch events
@@ -722,7 +728,6 @@ public class SubsamplingScaleImageView extends View {
         return handled || super.onTouchEvent(event);
     }
 
-    @SuppressWarnings("deprecation")
     private boolean onTouchEventInternal(@NonNull MotionEvent event) {
         int touchCount = event.getPointerCount();
         switch (event.getAction()) {
@@ -962,7 +967,7 @@ public class SubsamplingScaleImageView extends View {
      * Double tap zoom handler triggered from gesture detector or on touch, depending on whether
      * quick scale is enabled.
      */
-    private void doubleTapZoom(PointF sCenter, PointF vFocus) {
+    private void doubleTapZoom(@NonNull PointF sCenter, @NonNull PointF vFocus) {
         if (!panEnabled) {
             if (sRequestedCenter != null) {
                 // With a center specified from code, zoom around that point.
@@ -992,7 +997,7 @@ public class SubsamplingScaleImageView extends View {
      * the scaling and tiling required. Once the view is setup, tiles are displayed as they are loaded.
      */
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
         createPaints();
 
@@ -1302,10 +1307,12 @@ public class SubsamplingScaleImageView extends View {
 
             initialiseTileMap(maxTileDimensions);
 
-            List<Tile> baseGrid = tileMap.get(fullImageSampleSize);
-            for (Tile baseTile : baseGrid) {
-                TileLoadTask task = new TileLoadTask(this, decoder, baseTile);
-                execute(task);
+            final List<Tile> baseGrid = tileMap.get(fullImageSampleSize);
+            if (baseGrid != null) {
+                for (Tile baseTile : baseGrid) {
+                    TileLoadTask task = new TileLoadTask(this, decoder, baseTile);
+                    execute(task);
+                }
             }
             refreshRequiredTiles(true);
 
@@ -1359,7 +1366,7 @@ public class SubsamplingScaleImageView extends View {
     /**
      * Determine whether tile is visible.
      */
-    private boolean tileVisible(Tile tile) {
+    private boolean tileVisible(@NonNull Tile tile) {
         float sVisLeft = viewToSourceX(0),
             sVisRight = viewToSourceX(getWidth()),
             sVisTop = viewToSourceY(0),
@@ -1440,7 +1447,7 @@ public class SubsamplingScaleImageView extends View {
      * @param center Whether the image should be centered in the dimension it's too small to fill. While animating this can be false to avoid changes in direction as bounds are reached.
      * @param sat The scale we want and the translation we're aiming for. The values are adjusted to be valid.
      */
-    private void fitToBounds(boolean center, ScaleAndTranslate sat) {
+    private void fitToBounds(boolean center, @NonNull ScaleAndTranslate sat) {
         if (panLimit == PAN_LIMIT_OUTSIDE && isReady()) {
             center = false;
         }
@@ -1511,7 +1518,7 @@ public class SubsamplingScaleImageView extends View {
     /**
      * Once source image and view dimensions are known, creates a map of sample size to tile grid.
      */
-    private void initialiseTileMap(Point maxTileDimensions) {
+    private void initialiseTileMap(@NonNull Point maxTileDimensions) {
         debug("initialiseTileMap maxTileDimensions=%dx%d", maxTileDimensions.x, maxTileDimensions.y);
         this.tileMap = new LinkedHashMap<>();
         int sampleSize = fullImageSampleSize;
@@ -1561,6 +1568,7 @@ public class SubsamplingScaleImageView extends View {
     /**
      * Async task used to get image details without blocking the UI thread.
      */
+    @SuppressWarnings("deprecation")
     private static class TilesInitTask extends AsyncTask<Void, Void, int[]> {
         private final WeakReference<SubsamplingScaleImageView> viewRef;
         private final WeakReference<Context> contextRef;
@@ -1655,6 +1663,7 @@ public class SubsamplingScaleImageView extends View {
     /**
      * Async task used to load images without blocking the UI thread.
      */
+    @SuppressWarnings("deprecation")
     private static class TileLoadTask extends AsyncTask<Void, Void, Bitmap> {
         private final WeakReference<SubsamplingScaleImageView> viewRef;
         private final WeakReference<ImageRegionDecoder> decoderRef;
@@ -1744,6 +1753,7 @@ public class SubsamplingScaleImageView extends View {
     /**
      * Async task used to load bitmap without blocking the UI thread.
      */
+    @SuppressWarnings("deprecation")
     private static class BitmapLoadTask extends AsyncTask<Void, Void, Integer> {
         private final WeakReference<SubsamplingScaleImageView> viewRef;
         private final WeakReference<Context> contextRef;
@@ -2903,7 +2913,7 @@ public class SubsamplingScaleImageView extends View {
      * {@inheritDoc}
      */
     @Override
-    public void setOnLongClickListener(OnLongClickListener onLongClickListener) {
+    public void setOnLongClickListener(@Nullable OnLongClickListener onLongClickListener) {
         this.onLongClickListener = onLongClickListener;
     }
 
@@ -2912,7 +2922,7 @@ public class SubsamplingScaleImageView extends View {
      * to simplify implementation.
      * @param onImageEventListener an {@link OnImageEventListener} instance.
      */
-    public void setOnImageEventListener(OnImageEventListener onImageEventListener) {
+    public void setOnImageEventListener(@Nullable OnImageEventListener onImageEventListener) {
         this.onImageEventListener = onImageEventListener;
     }
 
@@ -2921,7 +2931,7 @@ public class SubsamplingScaleImageView extends View {
      * implementation.
      * @param onStateChangedListener an {@link OnStateChangedListener} instance.
      */
-    public void setOnStateChangedListener(OnStateChangedListener onStateChangedListener) {
+    public void setOnStateChangedListener(@Nullable OnStateChangedListener onStateChangedListener) {
         this.onStateChangedListener = onStateChangedListener;
     }
 
@@ -2943,7 +2953,7 @@ public class SubsamplingScaleImageView extends View {
      * @return {@link AnimationBuilder} instance. Call {@link SubsamplingScaleImageView.AnimationBuilder#start()} to start the anim.
      */
     @Nullable
-    public AnimationBuilder animateCenter(PointF sCenter) {
+    public AnimationBuilder animateCenter(@NonNull PointF sCenter) {
         if (!isReady()) {
             return null;
         }
@@ -2972,7 +2982,7 @@ public class SubsamplingScaleImageView extends View {
      * @return {@link AnimationBuilder} instance. Call {@link SubsamplingScaleImageView.AnimationBuilder#start()} to start the anim.
      */
     @Nullable
-    public AnimationBuilder animateScaleAndCenter(float scale, PointF sCenter) {
+    public AnimationBuilder animateScaleAndCenter(float scale, @NonNull PointF sCenter) {
         if (!isReady()) {
             return null;
         }

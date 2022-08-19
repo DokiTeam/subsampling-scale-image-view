@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.net.Uri;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -22,8 +23,11 @@ public final class ImageSource {
     static final String FILE_SCHEME = "file:///";
     static final String ASSET_SCHEME = "file:///android_asset/";
 
+    @Nullable
     private final Uri uri;
+    @Nullable
     private final Bitmap bitmap;
+    @Nullable
     private final Integer resource;
     private boolean tile;
     private int sWidth;
@@ -227,35 +231,38 @@ public final class ImageSource {
         }
     }
 
-    protected final Uri getUri() {
+    @Nullable
+    Uri getUri() {
         return uri;
     }
 
-    protected final Bitmap getBitmap() {
+    @Nullable
+    Bitmap getBitmap() {
         return bitmap;
     }
 
-    protected final Integer getResource() {
+    @Nullable
+    Integer getResource() {
         return resource;
     }
 
-    protected final boolean getTile() {
+    boolean getTile() {
         return tile;
     }
 
-    protected final int getSWidth() {
+    int getSWidth() {
         return sWidth;
     }
 
-    protected final int getSHeight() {
+    int getSHeight() {
         return sHeight;
     }
 
-    protected final Rect getSRegion() {
+    Rect getSRegion() {
         return sRegion;
     }
 
-    protected final boolean isCached() {
+    boolean isCached() {
         return cached;
     }
 }
