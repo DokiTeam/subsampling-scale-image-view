@@ -304,6 +304,8 @@ public class SubsamplingScaleImageView extends View {
     // A global preference for bitmap format, available to decoder classes that respect it
     private static Bitmap.Config preferredBitmapConfig;
 
+    private final TasksDisposer tasksDisposer = new TasksDisposer();
+
     public SubsamplingScaleImageView(@NonNull Context context, @Nullable AttributeSet attr) {
         super(context, attr);
         density = getResources().getDisplayMetrics().density;
@@ -533,6 +535,7 @@ public class SubsamplingScaleImageView extends View {
         matrix = null;
         sRect = null;
         if (newImage) {
+            tasksDisposer.dispose();
             uri = null;
             decoderLock.writeLock().lock();
             try {
@@ -1918,6 +1921,7 @@ public class SubsamplingScaleImageView extends View {
     }
 
     private void execute(AsyncTask<Void, Void, ?> asyncTask) {
+        tasksDisposer.add(asyncTask);
         asyncTask.executeOnExecutor(executor);
     }
 

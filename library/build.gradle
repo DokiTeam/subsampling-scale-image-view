@@ -2,14 +2,14 @@ apply plugin: 'com.android.library'
 
 group = 'com.davemorrissey.labs'
 archivesBaseName = 'subsampling-scale-image-view-androidx'
-version = '3.10.0'
+version = '4.0'
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 33
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 32
+        minSdkVersion 21
+        targetSdkVersion 33
         consumerProguardFiles 'proguard-rules.txt'
     }
 

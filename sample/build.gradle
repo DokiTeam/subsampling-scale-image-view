@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 33
     defaultConfig {
-        minSdkVersion 17
-        targetSdkVersion 32
+        minSdkVersion 21
+        targetSdkVersion 33
         applicationId "com.davemorrissey.labs.subscaleview.test"
     }
 
