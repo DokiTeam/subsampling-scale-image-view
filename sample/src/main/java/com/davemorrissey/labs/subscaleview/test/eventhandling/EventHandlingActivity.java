@@ -29,13 +29,9 @@ public class EventHandlingActivity extends AbstractPagesActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         SubsamplingScaleImageView imageView = findViewById(id.imageView);
-        imageView.setImage(ImageSource.asset("sanmartino.jpg"));
-        imageView.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { Toast.makeText(v.getContext(), "Clicked", Toast.LENGTH_SHORT).show(); }
-        });
-        imageView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override public boolean onLongClick(View v) { Toast.makeText(v.getContext(), "Long clicked", Toast.LENGTH_SHORT).show(); return true; }
-        });
+        imageView.setImage(ImageSource.Asset("sanmartino.jpg"));
+        imageView.setOnClickListener(v -> Toast.makeText(v.getContext(), "Clicked", Toast.LENGTH_SHORT).show());
+        imageView.setOnLongClickListener(v -> { Toast.makeText(v.getContext(), "Long clicked", Toast.LENGTH_SHORT).show(); return true; });
     }
 
 }

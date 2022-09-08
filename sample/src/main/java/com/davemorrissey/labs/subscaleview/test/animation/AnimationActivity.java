@@ -6,7 +6,7 @@ import androidx.annotation.Nullable;
 import android.view.View;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.AnimationBuilder;
+import com.davemorrissey.labs.subscaleview.AnimationBuilder;
 import com.davemorrissey.labs.subscaleview.test.AbstractPagesActivity;
 import com.davemorrissey.labs.subscaleview.test.Page;
 import com.davemorrissey.labs.subscaleview.test.R.id;
@@ -39,7 +39,7 @@ public class AnimationActivity extends AbstractPagesActivity {
             @Override public void onClick(View v) { AnimationActivity.this.play(); }
         });
         view = findViewById(id.imageView);
-        view.setImage(ImageSource.asset("sanmartino.jpg"));
+        view.setImage(ImageSource.Asset("sanmartino.jpg"));
     }
 
     @Override
@@ -60,6 +60,9 @@ public class AnimationActivity extends AbstractPagesActivity {
             PointF center = new PointF(random.nextInt(view.getSWidth()), random.nextInt(view.getSHeight()));
             view.setPin(center);
             AnimationBuilder animationBuilder = view.animateScaleAndCenter(scale, center);
+			if (animationBuilder == null) {
+				return;
+			}
             if (getPage() == 3) {
                 animationBuilder.withDuration(2000).withEasing(EASE_OUT_QUAD).withInterruptible(false).start();
             } else {

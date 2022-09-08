@@ -20,12 +20,10 @@ public class ExtensionPinFragment extends Fragment {
         View rootView = inflater.inflate(layout.extension_pin_fragment, container, false);
         final ExtensionActivity activity = (ExtensionActivity)getActivity();
         if (activity != null) {
-            rootView.findViewById(id.next).setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) { activity.next(); }
-            });
+            rootView.findViewById(id.next).setOnClickListener(v -> activity.next());
         }
         PinView imageView = rootView.findViewById(id.imageView);
-        imageView.setImage(ImageSource.asset("sanmartino.jpg"));
+        imageView.setImage(ImageSource.Asset("sanmartino.jpg"));
         imageView.setPin(new PointF(1602f, 405f));
         return rootView;
     }

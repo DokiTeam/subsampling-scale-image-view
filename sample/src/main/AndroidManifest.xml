@@ -21,6 +21,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app.name"
         android:theme="@style/sampleTheme"
+		android:name=".SsivSampleApp"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:exported="true"

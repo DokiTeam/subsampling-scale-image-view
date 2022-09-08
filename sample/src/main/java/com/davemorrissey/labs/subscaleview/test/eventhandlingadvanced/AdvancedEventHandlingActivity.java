@@ -39,9 +39,9 @@ public class AdvancedEventHandlingActivity extends AbstractPagesActivity {
             public boolean onSingleTapConfirmed(MotionEvent e) {
                 if (imageView.isReady()) {
                     PointF sCoord = imageView.viewToSourceCoord(e.getX(), e.getY());
-                    Toast.makeText(getApplicationContext(), "Single tap: " + ((int)sCoord.x) + ", " + ((int)sCoord.y), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AdvancedEventHandlingActivity.this, "Single tap: " + ((int)sCoord.x) + ", " + ((int)sCoord.y), Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "Single tap: Image not ready", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AdvancedEventHandlingActivity.this, "Single tap: Image not ready", Toast.LENGTH_SHORT).show();
                 }
                 return true;
             }
@@ -66,13 +66,8 @@ public class AdvancedEventHandlingActivity extends AbstractPagesActivity {
             }
         });
 
-        imageView.setImage(ImageSource.asset("sanmartino.jpg"));
-        imageView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                return gestureDetector.onTouchEvent(motionEvent);
-            }
-        });
+        imageView.setImage(ImageSource.Asset("sanmartino.jpg"));
+        imageView.setOnTouchListener((view, motionEvent) -> gestureDetector.onTouchEvent(motionEvent));
     }
 
 }

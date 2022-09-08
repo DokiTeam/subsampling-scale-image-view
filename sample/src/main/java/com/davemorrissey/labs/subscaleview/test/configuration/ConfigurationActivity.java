@@ -38,7 +38,7 @@ public class ConfigurationActivity extends AbstractPagesActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         view = findViewById(id.imageView);
-        view.setImage(ImageSource.asset("card.png"));
+        view.setImage(ImageSource.Asset("card.png"));
     }
 
     @Override
@@ -72,11 +72,7 @@ public class ConfigurationActivity extends AbstractPagesActivity {
         } else {
             view.setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_INSIDE);
         }
-        if (page == 9) {
-            view.setDebug(true);
-        } else {
-            view.setDebug(false);
-        }
+		SubsamplingScaleImageView.setDebug(page == 9);
         if (page == 2) {
             view.setScaleAndCenter(0f, new PointF(3900, 3120));
             view.setPanEnabled(false);

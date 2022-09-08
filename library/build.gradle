@@ -1,4 +1,8 @@
-apply plugin: 'com.android.library'
+plugins {
+	id 'com.android.library'
+	id 'kotlin-android'
+	id 'kotlin-parcelize'
+}
 
 group = 'com.davemorrissey.labs'
 archivesBaseName = 'subsampling-scale-image-view-androidx'
@@ -17,6 +21,11 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
+
+	kotlinOptions {
+		jvmTarget = JavaVersion.VERSION_1_8.toString()
+		freeCompilerArgs += '-Xexplicit-api=warning'
+	}
 }
 
 configurations {
@@ -29,6 +38,7 @@ dependencies {
     javadocs 'androidx.exifinterface:exifinterface:1.3.3'
     implementation 'androidx.annotation:annotation:1.4.0'
     implementation 'androidx.exifinterface:exifinterface:1.3.3'
+	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
 }
 
 task javadoc(type: Javadoc) {
@@ -36,10 +46,8 @@ task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.sourceFiles
     destinationDir = rootProject.file("docs/javadoc")
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
+    classpath += configurations.implementation
     classpath += configurations.javadocs
     options.noTimestamp = true
     options.links = ['https://developer.android.com/reference/']
 }
-
-apply from: rootProject.file('release.gradle')
