@@ -3,6 +3,7 @@ package com.davemorrissey.labs.subscaleview.decoder
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.annotation.WorkerThread
 
 /**
  * Interface for image decoding classes, allowing the default [android.graphics.BitmapFactory]
@@ -25,5 +26,6 @@ public interface ImageDecoder {
 	 * @throws Exception if decoding fails.
 	 */
 	@Throws(Exception::class)
+	@WorkerThread
 	public fun decode(context: Context, uri: Uri): Bitmap
 }

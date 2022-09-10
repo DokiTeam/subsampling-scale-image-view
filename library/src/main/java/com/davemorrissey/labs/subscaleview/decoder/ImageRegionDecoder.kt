@@ -28,6 +28,7 @@ public interface ImageRegionDecoder {
 	 * @throws Exception if initialisation fails.
 	 */
 	@Throws(Exception::class)
+	@WorkerThread
 	public fun init(context: Context, uri: Uri): Point
 
 	/**

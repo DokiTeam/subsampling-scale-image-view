@@ -1,5 +1,6 @@
 package com.davemorrissey.labs.subscaleview
 
+import android.graphics.Point
 import android.graphics.PointF
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
@@ -7,6 +8,11 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 public class ImageViewState(
 	public val scale: Float,
-	public val center: PointF, // TODO 2 fields
+	public val centerX: Float,
+	public val centerY: Float,
 	public val orientation: Int,
-) : Parcelable
+) : Parcelable {
+
+	public val center: PointF
+		get() = PointF(centerX, centerY)
+}

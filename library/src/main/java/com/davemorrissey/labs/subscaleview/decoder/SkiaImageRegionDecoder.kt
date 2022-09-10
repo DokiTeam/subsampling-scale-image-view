@@ -1,14 +1,13 @@
 package com.davemorrissey.labs.subscaleview.decoder
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.AssetManager
-import android.content.res.Resources
 import android.graphics.*
 import android.net.Uri
 import android.text.TextUtils
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.preferredBitmapConfig
-import java.io.InputStream
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -37,57 +36,49 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 
 	private val bitmapConfig = bitmapConfig ?: preferredBitmapConfig ?: Bitmap.Config.RGB_565
 
+	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
 	override fun init(context: Context, uri: Uri): Point {
 		val uriString = uri.toString()
-		if (uriString.startsWith(RESOURCE_PREFIX)) {
-			val res: Resources
-			val packageName = uri.authority
-			res = if (context.packageName == packageName) {
-				context.resources
-			} else {
-				val pm = context.packageManager
-				pm.getResourcesForApplication(packageName!!)
-			}
-			var id = 0
-			val segments = uri.pathSegments
-			val size = segments.size
-			if (size == 2 && segments[0] == "drawable") {
-				val resName = segments[1]
-				id = res.getIdentifier(resName, "drawable", packageName)
-			} else if (size == 1 && TextUtils.isDigitsOnly(segments[0])) {
-				try {
-					id = segments[0].toInt()
-				} catch (ignored: NumberFormatException) {
+		decoder = when {
+			uriString.startsWith(RESOURCE_PREFIX) -> {
+				val packageName = uri.authority
+				val res = if (packageName == null || context.packageName == packageName) {
+					context.resources
+				} else {
+					context.packageManager.getResourcesForApplication(packageName)
 				}
-			}
-			decoder = BitmapRegionDecoder(context.resources.openRawResource(id))
-		} else if (uriString.startsWith(ASSET_PREFIX)) {
-			val assetName = uriString.substring(ASSET_PREFIX.length)
-			decoder = BitmapRegionDecoder(
-				context.assets.open(
-					assetName,
-					AssetManager.ACCESS_RANDOM,
-				),
-			)
-		} else if (uriString.startsWith(FILE_PREFIX)) {
-			decoder = BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
-		} else {
-			var inputStream: InputStream? = null
-			try {
-				val contentResolver = context.contentResolver
-				inputStream = contentResolver.openInputStream(uri)
-				if (inputStream == null) {
-					throw Exception("Content resolver returned null stream. Unable to initialise with uri.")
-				}
-				decoder = BitmapRegionDecoder(inputStream)
-			} finally {
-				if (inputStream != null) {
+				var id = 0
+				val segments = uri.pathSegments
+				val size = segments.size
+				if (size == 2 && segments[0] == "drawable") {
+					val resName = segments[1]
+					id = res.getIdentifier(resName, "drawable", packageName)
+				} else if (size == 1 && TextUtils.isDigitsOnly(segments[0])) {
 					try {
-						inputStream.close()
-					} catch (e: Exception) { /* Ignore */
+						id = segments[0].toInt()
+					} catch (ignored: NumberFormatException) {
 					}
 				}
+				BitmapRegionDecoder(context.resources.openRawResource(id))
+			}
+			uriString.startsWith(ASSET_PREFIX) -> {
+				val assetName = uriString.substring(ASSET_PREFIX.length)
+				BitmapRegionDecoder(
+					context.assets.open(
+						assetName,
+						AssetManager.ACCESS_RANDOM,
+					),
+				)
+			}
+			uriString.startsWith(FILE_PREFIX) -> {
+				BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
+			}
+			else -> {
+				val contentResolver = context.contentResolver
+				contentResolver.openInputStream(uri)?.use { inputStream ->
+					BitmapRegionDecoder(inputStream)
+				} ?: error("Content resolver returned null stream. Unable to initialise with uri.")
 			}
 		}
 		return Point(decoder!!.width, decoder!!.height)
@@ -96,18 +87,14 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 	override fun decodeRegion(sRect: Rect, sampleSize: Int): Bitmap {
 		decodeLock.lock()
 		return try {
-			if (decoder != null && !decoder!!.isRecycled) {
-				val options = BitmapFactory.Options()
-				options.inSampleSize = sampleSize
-				options.inPreferredConfig = bitmapConfig
-				val bitmap = decoder!!.decodeRegion(sRect, options)
-					?: throw RuntimeException(
-						"Skia image decoder returned null bitmap - image format may not be supported",
-					)
-				bitmap
-			} else {
-				throw IllegalStateException("Cannot decode region after decoder has been recycled")
+			check(decoder?.isRecycled == false) {
+				"Cannot decode region after decoder has been recycled"
 			}
+			val options = BitmapFactory.Options()
+			options.inSampleSize = sampleSize
+			options.inPreferredConfig = bitmapConfig
+			decoder?.decodeRegion(sRect, options)
+				?: error("Skia image decoder returned null bitmap - image format may not be supported")
 		} finally {
 			decodeLock.unlock()
 		}
@@ -120,9 +107,9 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 	@Synchronized
 	override fun recycle() {
 		decoderLock.writeLock().lock()
-		decoder = try {
-			decoder!!.recycle()
-			null
+		try {
+			decoder?.recycle()
+			decoder = null
 		} finally {
 			decoderLock.writeLock().unlock()
 		}
@@ -135,4 +122,13 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 	 */
 	private val decodeLock: Lock
 		get() = decoderLock.readLock()
+
+	public class Factory @JvmOverloads constructor(
+		private val bitmapConfig: Bitmap.Config? = null
+	) : DecoderFactory<SkiaImageRegionDecoder> {
+
+		override fun make(): SkiaImageRegionDecoder {
+			return SkiaImageRegionDecoder(bitmapConfig)
+		}
+	}
 }
