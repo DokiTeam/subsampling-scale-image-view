@@ -10,15 +10,15 @@ public interface OnAnimationEventListener {
 	/**
 	 * The animation has completed, having reached its endpoint.
 	 */
-	public fun onComplete()
+	public fun onComplete(): Unit = Unit
 
 	/**
 	 * The animation has been aborted before reaching its endpoint because the user touched the screen.
 	 */
-	public fun onInterruptedByUser()
+	public fun onInterruptedByUser(): Unit = Unit
 
 	/**
 	 * The animation has been aborted before reaching its endpoint because a new animation has been started.
 	 */
-	public fun onInterruptedByNewAnim()
+	public fun onInterruptedByNewAnim(): Unit = Unit
 }

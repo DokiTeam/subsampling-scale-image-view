@@ -1,5 +1,7 @@
 package com.davemorrissey.labs.subscaleview
 
+import androidx.annotation.MainThread
+
 public interface OnImageEventListener {
 	/**
 	 * Called when the dimensions of the image and view are known, and either a preview image,
@@ -7,7 +9,8 @@ public interface OnImageEventListener {
 	 * are known and the next draw will display an image. This event can be used to hide a loading
 	 * graphic, or inform a subclass that it is safe to draw overlays.
 	 */
-	public fun onReady()
+	@MainThread
+	public fun onReady(): Unit = Unit
 
 	/**
 	 * Called when the full size image is ready. When using tiling, this means the lowest resolution
@@ -16,7 +19,8 @@ public interface OnImageEventListener {
 	 * while only a preview is displayed, otherwise for most cases [.onReady] is the best
 	 * event to listen to.
 	 */
-	public fun onImageLoaded()
+	@MainThread
+	public fun onImageLoaded(): Unit = Unit
 
 	/**
 	 * Called when a preview image could not be loaded. This method cannot be relied upon; certain
@@ -24,7 +28,8 @@ public interface OnImageEventListener {
 	 * and displayed with no detectable error. The view will continue to load the full size image.
 	 * @param e The exception thrown. This error is logged by the view.
 	 */
-	public fun onPreviewLoadError(e: Throwable)
+	@MainThread
+	public fun onPreviewLoadError(e: Throwable): Unit = Unit
 
 	/**
 	 * Indicates an error initiliasing the decoder when using a tiling, or when loading the full
@@ -33,7 +38,8 @@ public interface OnImageEventListener {
 	 * displayed with no detectable error.
 	 * @param e The exception thrown. This error is also logged by the view.
 	 */
-	public fun onImageLoadError(e: Throwable)
+	@MainThread
+	public fun onImageLoadError(e: Throwable): Unit = Unit
 
 	/**
 	 * Called when an image tile could not be loaded. This method cannot be relied upon; certain
@@ -42,11 +48,13 @@ public interface OnImageEventListener {
 	 * result in an error caught by [.onImageLoadError].
 	 * @param e The exception thrown. This error is logged by the view.
 	 */
-	public fun onTileLoadError(e: Throwable)
+	@MainThread
+	public fun onTileLoadError(e: Throwable): Unit = Unit
 
 	/**
 	 * Called when a bitmap set using ImageSource.cachedBitmap is no longer being used by the View.
 	 * This is useful if you wish to manage the bitmap after the preview is shown
 	 */
-	public fun onPreviewReleased()
+	@MainThread
+	public fun onPreviewReleased(): Unit = Unit
 }

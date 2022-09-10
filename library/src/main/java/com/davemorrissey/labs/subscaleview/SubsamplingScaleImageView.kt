@@ -13,15 +13,16 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.AnyThread
 import androidx.annotation.AttrRes
+import androidx.annotation.CallSuper
 import androidx.annotation.ColorInt
 import com.davemorrissey.labs.subscaleview.decoder.*
 import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
 import com.davemorrissey.labs.subscaleview.internal.*
+import kotlinx.coroutines.*
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlinx.coroutines.*
 
 @Suppress("MemberVisibilityCanBePrivate")
 public open class SubsamplingScaleImageView @JvmOverloads constructor(
@@ -64,8 +65,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	// Min scale allowed (prevent infinite zoom)
 	private var _minScale: Float = minScale()
 
-	public val minScale: Float
+	public var minScale: Float
 		get() = minScale()
+		set(value) {
+			_minScale = value
+		}
 
 	// Density to reach before loading higher resolution tiles
 	private var minimumTileDpi: Int = -1
@@ -75,7 +79,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		set(value) {
 			require(value in VALID_PAN_LIMITS) { "Invalid pan limit: $value" }
 			field = value
-			if (isReady()) {
+			if (isReady) {
 				fitToBounds(true)
 				invalidate()
 			}
@@ -106,7 +110,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		set(value) {
 			require(value in VALID_SCALE_TYPES) { "Invalid scale type: $value" }
 			field = value
-			if (isReady()) {
+			if (isReady) {
 				fitToBounds(true)
 				invalidate()
 			}
@@ -128,9 +132,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			if (!value) {
 				vTranslate?.set(
 					width / 2f - scale * (sWidth() / 2f),
-					height / 2f - scale * (sHeight() / 2f)
+					height / 2f - scale * (sHeight() / 2f),
 				)
-				if (isReady()) {
+				if (isReady) {
 					refreshRequiredTiles(true)
 					invalidate()
 				}
@@ -252,10 +256,10 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private var imageLoadedSent: Boolean = false
 
 	// Event listener
-	private var onImageEventListener: OnImageEventListener? = null
+	private val onImageEventListener = CompositeImageEventListener()
 
 	// Scale and center listener
-	private var onStateChangedListener: OnStateChangedListener? = null
+	public var onStateChangedListener: OnStateChangedListener? = null
 
 	@Suppress("LeakingThis")
 	private val touchEventDelegate = TouchEventDelegate(this)
@@ -266,7 +270,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private var debugLinePaint: Paint? = null
 	private var tileBgPaint: Paint? = null
 
-	private var colorFilter: ColorFilter? = null
+	public var colorFilter: ColorFilter? = null
+		set(value) {
+			field = value
+			bitmapPaint?.colorFilter = value
+		}
 
 	private var pendingState: ImageViewState? = null
 
@@ -278,6 +286,16 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private var sRect: RectF? = null
 	private val srcArray = FloatArray(8)
 	private val dstArray = FloatArray(8)
+
+	/**
+	 * Call to find whether the view is initialised, has dimensions, and will display an image on
+	 * the next draw. If a preview has been provided, it may be the preview that will be displayed
+	 * and the full size image may still be loading. If no preview was provided, this is called once
+	 * the base layer tiles of the full size image are loaded.
+	 * @return true if the view is ready to display an image and accept touch gestures.
+	 */
+	public val isReady: Boolean
+		get() = isReadySent
 
 	// The logical density of the display
 	private val density = context.resources.displayMetrics.density
@@ -382,6 +400,20 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	}
 
 	/**
+	 * Releases all resources the view is using and resets the state, nulling any fields that use significant memory.
+	 * After you have called this method, the view can be re-used by setting a new image. Settings are remembered
+	 * but state (scale and center) is forgotten. You can restore these yourself if required.
+	 */
+	@CallSuper
+	public open fun recycle() {
+		reset(true)
+		bitmapPaint = null
+		debugTextPaint = null
+		debugLinePaint = null
+		tileBgPaint = null
+	}
+
+	/**
 	 * This is a screen density aware alternative to {@link #setMaxScale(float)}; it allows you to express the maximum
 	 * allowed scale in terms of the minimum pixel density. This avoids the problem of 1:1 scale still being
 	 * too small on a high density screen. A sensible starting point is 160 - the default used by this view.
@@ -408,7 +440,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		val metrics = resources.displayMetrics
 		val averageDpi = (metrics.xdpi + metrics.ydpi) / 2
 		this.minimumTileDpi = minOf(averageDpi, minimumTileDpi.toFloat()).toInt()
-		if (isReady()) {
+		if (isReady) {
 			reset(false)
 			invalidate()
 		}
@@ -445,6 +477,22 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			isLongClickable = true
 		}
 		touchEventDelegate.onLongClickListener = listener
+	}
+
+	@Deprecated("Use addOnImageEventListener() instead")
+	public fun setOnImageEventListener(listener: OnImageEventListener?) {
+		onImageEventListener.clearListeners()
+		if (listener != null) {
+			onImageEventListener.addListener(listener)
+		}
+	}
+
+	public fun addOnImageEventListener(listener: OnImageEventListener) {
+		onImageEventListener.addListener(listener)
+	}
+
+	public fun removeOnImageEventListener(listener: OnImageEventListener) {
+		onImageEventListener.removeListener(listener)
 	}
 
 	/**
@@ -991,17 +1039,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		return (vy - (vTranslate ?: return Float.NaN).y) / scale
 	}
 
-	/**
-	 * Call to find whether the view is initialised, has dimensions, and will display an image on
-	 * the next draw. If a preview has been provided, it may be the preview that will be displayed
-	 * and the full size image may still be loading. If no preview was provided, this is called once
-	 * the base layer tiles of the full size image are loaded.
-	 * @return true if the view is ready to display an image and accept touch gestures.
-	 */
-	public fun isReady(): Boolean {
-		return isReadySent
-	}
-
 	private fun reset(isNewImage: Boolean) {
 		debug("reset newImage=$isNewImage")
 		scale = 0f
@@ -1499,7 +1536,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	internal fun fitToBounds(center: Boolean, sat: ScaleAndTranslate) {
 		@Suppress("NAME_SHADOWING")
 		var center = center
-		if (panLimit == PAN_LIMIT_OUTSIDE && isReady()) {
+		if (panLimit == PAN_LIMIT_OUTSIDE && isReady) {
 			center = false
 		}
 		val vTranslate = sat.vTranslate
@@ -1507,7 +1544,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		val scaleWidth = scale * sWidth()
 		val scaleHeight = scale * sHeight()
 		when {
-			panLimit == PAN_LIMIT_CENTER && isReady() -> {
+			panLimit == PAN_LIMIT_CENTER && isReady -> {
 				vTranslate.x = vTranslate.x.coerceAtLeast(width / 2f - scaleWidth)
 				vTranslate.y = vTranslate.y.coerceAtLeast(height / 2f - scaleHeight)
 			}
@@ -1529,7 +1566,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		val maxTx: Float
 		val maxTy: Float
 		when {
-			panLimit == PAN_LIMIT_CENTER && isReady() -> {
+			panLimit == PAN_LIMIT_CENTER && isReady -> {
 				maxTx = (width / 2f).coerceAtLeast(0f)
 				maxTy = (height / 2f).coerceAtLeast(0f)
 			}
@@ -1768,7 +1805,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * @return [AnimationBuilder] instance. Call [AnimationBuilder.start] to start the anim.
 	 */
 	public fun animateScaleAndCenter(scale: Float, sCenter: PointF): AnimationBuilder? {
-		return if (isReady()) {
+		return if (isReady) {
 			AnimationBuilder(this, scale, sCenter)
 		} else {
 			null
@@ -1782,7 +1819,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	public fun resetScaleAndCenter() {
 		anim = null
 		pendingScale = limitedScale(0f)
-		sPendingCenter = if (isReady()) {
+		sPendingCenter = if (isReady) {
 			PointF(sWidth() / 2f, sHeight() / 2f)
 		} else {
 			PointF(0f, 0f)
