@@ -32,4 +32,4 @@ Subsampling Scale Image View (Kotatsu fork)
     }
     ```
 
-   See for versions at [JitPack](https://jitpack.io/#KotatsuApp/kotatsu-parsers)
+   See for versions at [JitPack](https://jitpack.io/#KotatsuApp/subsampling-scale-image-view)
