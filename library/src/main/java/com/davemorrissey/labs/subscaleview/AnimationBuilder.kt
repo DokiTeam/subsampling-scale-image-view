@@ -2,8 +2,12 @@ package com.davemorrissey.labs.subscaleview
 
 import android.graphics.PointF
 import android.util.Log
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.Interpolator
 import androidx.annotation.ReturnThis
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.VALID_EASING_STYLES
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.EASE_IN_OUT_QUAD
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.EASE_OUT_QUAD
 import com.davemorrissey.labs.subscaleview.internal.Anim
 import com.davemorrissey.labs.subscaleview.internal.ScaleAndTranslate
 
@@ -20,10 +24,10 @@ public class AnimationBuilder internal constructor(
 	private val targetScale: Float = scale
 	private val targetSCenter: PointF = sCenter
 	private var duration: Long = 500
-	private var easing = SubsamplingScaleImageView.EASE_IN_OUT_QUAD
+	private var interpolator: Interpolator = AccelerateDecelerateInterpolator()
 	private var origin = SubsamplingScaleImageView.ORIGIN_ANIM
 	private var isInterruptible = true
-	private var panLimited = true
+	private var isPanLimited = true
 	private var listener: OnAnimationEventListener? = null
 
 	/**
@@ -54,9 +58,24 @@ public class AnimationBuilder internal constructor(
 	 * @return this builder for method chaining.
 	 */
 	@ReturnThis
+	@Deprecated("Use withInterpolator instead")
 	public fun withEasing(easing: Int): AnimationBuilder {
-		require(easing in VALID_EASING_STYLES) { "Unknown easing type: $easing" }
-		this.easing = easing
+		this.interpolator = when (easing) {
+			EASE_IN_OUT_QUAD -> AccelerateDecelerateInterpolator()
+			EASE_OUT_QUAD -> DecelerateInterpolator()
+			else -> throw IllegalArgumentException("Unknown easing type: $easing")
+		}
+		return this
+	}
+
+	/**
+	 * Set the animation interpolator.
+	 * @param interpolator interpolator for animation.
+	 * @return this builder for method chaining.
+	 */
+	@ReturnThis
+	public fun withInterpolator(interpolator: Interpolator): AnimationBuilder {
+		this.interpolator = interpolator
 		return this
 	}
 
@@ -79,7 +98,7 @@ public class AnimationBuilder internal constructor(
 	 */
 	@ReturnThis
 	public fun withPanLimited(panLimited: Boolean): AnimationBuilder {
-		this.panLimited = panLimited
+		this.isPanLimited = panLimited
 		return this
 	}
 
@@ -104,7 +123,7 @@ public class AnimationBuilder internal constructor(
 		val vxCenter = view.paddingLeft + (view.width - view.paddingRight - view.paddingLeft) / 2f
 		val vyCenter = view.paddingTop + (view.height - view.paddingBottom - view.paddingTop) / 2f
 		val targetScale: Float = view.limitedScale(targetScale)
-		val targetSCenter = if (panLimited) view.limitedSCenter(
+		val targetSCenter = if (isPanLimited) view.limitedSCenter(
 			this.targetSCenter.x,
 			this.targetSCenter.y,
 			targetScale,
@@ -120,7 +139,7 @@ public class AnimationBuilder internal constructor(
 			vFocusStart = view.sourceToViewCoord(targetSCenter),
 			duration = duration,
 			interruptible = isInterruptible,
-			easing = easing,
+			interpolator = interpolator,
 			origin = origin,
 			time = System.currentTimeMillis(),
 			listener = listener,

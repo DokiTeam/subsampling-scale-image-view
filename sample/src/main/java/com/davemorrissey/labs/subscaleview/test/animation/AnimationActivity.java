@@ -4,6 +4,9 @@ import android.graphics.PointF;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import android.view.View;
+import android.view.animation.AnticipateOvershootInterpolator;
+import android.view.animation.BounceInterpolator;
+import android.view.animation.OvershootInterpolator;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.AnimationBuilder;
@@ -64,7 +67,10 @@ public class AnimationActivity extends AbstractPagesActivity {
 				return;
 			}
             if (getPage() == 3) {
-                animationBuilder.withDuration(2000).withEasing(EASE_OUT_QUAD).withInterruptible(false).start();
+                animationBuilder.withDuration(2000)
+					.withInterpolator(new AnticipateOvershootInterpolator())
+					.withInterruptible(false)
+					.start();
             } else {
                 animationBuilder.withDuration(750).start();
             }

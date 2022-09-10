@@ -1711,28 +1711,22 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		var scaleElapsed = System.currentTimeMillis() - animation.time
 		val finished = scaleElapsed > animation.duration
 		scaleElapsed = min(scaleElapsed, animation.duration)
-		scale = ease(
-			animation.easing,
+		scale = animation.interpolate(
 			scaleElapsed,
 			animation.scaleStart,
 			animation.scaleEnd - animation.scaleStart,
-			animation.duration,
 		)
 
 		// Apply required animation to the focal point
-		val vFocusNowX: Float = ease(
-			animation.easing,
+		val vFocusNowX: Float = animation.interpolate(
 			scaleElapsed,
 			animation.vFocusStart.x,
 			animation.vFocusEnd.x - animation.vFocusStart.x,
-			animation.duration,
 		)
-		val vFocusNowY: Float = ease(
-			animation.easing,
+		val vFocusNowY: Float = animation.interpolate(
 			scaleElapsed,
 			animation.vFocusStart.y,
 			animation.vFocusEnd.y - animation.vFocusStart.y,
-			animation.duration,
 		)
 		// Find out where the focal point is at this scale and adjust its position to follow the animation path
 		vTranslate!!.x -= sourceToViewX(animation.sCenterEnd.x) - vFocusNowX
@@ -1893,12 +1887,12 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		private val VALID_ZOOM_STYLES = ZOOM_FOCUS_FIXED..ZOOM_FOCUS_CENTER_IMMEDIATE
 
 		/** Quadratic ease out. Not recommended for scale animation, but good for panning.  */
+		@Deprecated("Use interpolator api instead")
 		public const val EASE_OUT_QUAD: Int = 1
 
 		/** Quadratic ease in and out.  */
+		@Deprecated("Use interpolator api instead")
 		public const val EASE_IN_OUT_QUAD: Int = 2
-
-		internal val VALID_EASING_STYLES = intArrayOf(EASE_IN_OUT_QUAD, EASE_OUT_QUAD)
 
 		/** Don't allow the image to be panned off screen. As much of the image as possible is always displayed, centered in the view when it is smaller. This is the best option for galleries.  */
 		public const val PAN_LIMIT_INSIDE: Int = 1
