@@ -14,6 +14,7 @@ import android.view.View
 import androidx.annotation.AnyThread
 import androidx.annotation.AttrRes
 import androidx.annotation.CallSuper
+import androidx.annotation.CheckResult
 import androidx.annotation.ColorInt
 import com.davemorrissey.labs.subscaleview.decoder.*
 import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
@@ -256,7 +257,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private var imageLoadedSent: Boolean = false
 
 	// Event listener
-	private val onImageEventListener = CompositeImageEventListener()
+	private val onImageEventListeners = CompositeImageEventListener()
 
 	// Scale and center listener
 	public var onStateChangedListener: OnStateChangedListener? = null
@@ -481,18 +482,18 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	@Deprecated("Use addOnImageEventListener() instead")
 	public fun setOnImageEventListener(listener: OnImageEventListener?) {
-		onImageEventListener.clearListeners()
+		onImageEventListeners.clearListeners()
 		if (listener != null) {
-			onImageEventListener.addListener(listener)
+			onImageEventListeners.addListener(listener)
 		}
 	}
 
 	public fun addOnImageEventListener(listener: OnImageEventListener) {
-		onImageEventListener.addListener(listener)
+		onImageEventListeners.addListener(listener)
 	}
 
 	public fun removeOnImageEventListener(listener: OnImageEventListener) {
-		onImageEventListener.removeListener(listener)
+		onImageEventListeners.removeListener(listener)
 	}
 
 	/**
@@ -871,6 +872,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	}
 
 	@JvmOverloads
+	@CheckResult
 	public fun getCenter(outPoint: PointF = PointF()): PointF? {
 		val mX = width / 2
 		val mY = height / 2
@@ -994,6 +996,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * @param vTarget target object for result. The same instance is also returned.
 	 * @return view coordinates. This is the same instance passed to the vTarget param.
 	 */
+	@CheckResult
 	public fun sourceToViewCoord(sxy: PointF, vTarget: PointF): PointF? {
 		return sourceToViewCoord(sxy.x, sxy.y, vTarget)
 	}
@@ -1005,6 +1008,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * @param vTarget target object for result. The same instance is also returned.
 	 * @return view coordinates. This is the same instance passed to the vTarget param.
 	 */
+	@CheckResult
 	public fun sourceToViewCoord(sx: Float, sy: Float, vTarget: PointF): PointF? {
 		if (vTranslate == null) {
 			return null
@@ -1079,7 +1083,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				if (!bitmapIsCached) {
 					it.recycle()
 				} else {
-					onImageEventListener?.onPreviewReleased()
+					onImageEventListeners.onPreviewReleased()
 				}
 			}
 			sWidth = 0
@@ -1257,7 +1261,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			}
 			bitmap = null
 			if (bitmapIsCached) {
-				onImageEventListener?.onPreviewReleased()
+				onImageEventListeners.onPreviewReleased()
 			}
 			bitmapIsPreview = false
 			bitmapIsCached = false
@@ -1290,9 +1294,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			}.onFailure { error ->
 				Log.e(TAG, "Failed to load bitmap", error)
 				if (preview) {
-					onImageEventListener?.onPreviewLoadError(error)
+					onImageEventListeners.onPreviewLoadError(error)
 				} else {
-					onImageEventListener?.onImageLoadError(error)
+					onImageEventListeners.onImageLoadError(error)
 				}
 			}
 		}
@@ -1322,7 +1326,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			}.onSuccess { xyo ->
 				onTilesInited(checkNotNull(decoder), xyo[0], xyo[1], xyo[2])
 			}.onFailure { error ->
-				onImageEventListener?.onImageLoadError(error)
+				onImageEventListeners.onImageLoadError(error)
 			}
 		}
 	}
@@ -1364,7 +1368,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				tile.isLoading = false
 				onTileLoaded()
 			}.onFailure { error ->
-				onImageEventListener?.onTileLoadError(error)
+				onImageEventListeners.onTileLoadError(error)
 			}
 		}
 	}
@@ -1383,7 +1387,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			}
 			bitmap = null
 			if (bitmapIsCached) {
-				onImageEventListener?.onPreviewReleased()
+				onImageEventListeners.onPreviewReleased()
 			}
 			bitmapIsPreview = false
 			bitmapIsCached = false
@@ -1467,7 +1471,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			this.bitmap!!.recycle()
 		}
 		if (this.bitmap != null && this.bitmapIsCached) {
-			onImageEventListener?.onPreviewReleased()
+			onImageEventListeners.onPreviewReleased()
 		}
 		bitmapIsPreview = false
 		this.bitmapIsCached = bitmapIsCached
@@ -1494,7 +1498,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			preDraw()
 			isReadySent = true
 			onReady()
-			onImageEventListener?.onReady()
+			onImageEventListeners.onReady()
 		}
 		return ready
 	}
@@ -1509,7 +1513,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			preDraw()
 			imageLoadedSent = true
 			onImageLoaded()
-			onImageEventListener?.onImageLoaded()
+			onImageEventListeners.onImageLoaded()
 		}
 		return imageLoaded
 	}
@@ -1589,7 +1593,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	@JvmSynthetic
 	internal fun limitedScale(targetScale: Float): Float {
-		return targetScale.coerceIn(minScale(), maxScale)
+		return minOf(maxScale, maxOf(minScale(), targetScale))
 	}
 
 	/**
