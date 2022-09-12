@@ -15,12 +15,12 @@ public interface OnStateChangedListener {
 	 * @param newScale The new scale.
 	 * @param origin Where the event originated from - one of [.ORIGIN_ANIM], [.ORIGIN_TOUCH].
 	 */
-	public fun onScaleChanged(newScale: Float, origin: Int): Unit = Unit
+	public fun onScaleChanged(newScale: Float, origin: Int)
 
 	/**
 	 * The source center has been changed. This can be a result of panning or zooming.
 	 * @param newCenter The new source center point.
 	 * @param origin Where the event originated from - one of [.ORIGIN_ANIM], [.ORIGIN_TOUCH].
 	 */
-	public fun onCenterChanged(newCenter: PointF?, origin: Int): Unit = Unit
+	public fun onCenterChanged(newCenter: PointF, origin: Int)
 }

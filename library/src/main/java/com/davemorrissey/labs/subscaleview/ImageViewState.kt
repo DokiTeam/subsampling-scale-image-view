@@ -1,6 +1,5 @@
 package com.davemorrissey.labs.subscaleview
 
-import android.graphics.Point
 import android.graphics.PointF
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

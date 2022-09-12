@@ -1524,7 +1524,10 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				onScaleChanged(scale, origin)
 			}
 			if (vTranslate != oldVTranslate) {
-				onCenterChanged(getCenter(), origin)
+				val center = getCenter()
+				if (center != null) {
+					onCenterChanged(center, origin)
+				}
 			}
 		}
 	}

@@ -10,7 +10,7 @@ public interface OnImageEventListener {
 	 * graphic, or inform a subclass that it is safe to draw overlays.
 	 */
 	@MainThread
-	public fun onReady(): Unit = Unit
+	public fun onReady()
 
 	/**
 	 * Called when the full size image is ready. When using tiling, this means the lowest resolution
@@ -20,7 +20,7 @@ public interface OnImageEventListener {
 	 * event to listen to.
 	 */
 	@MainThread
-	public fun onImageLoaded(): Unit = Unit
+	public fun onImageLoaded()
 
 	/**
 	 * Called when a preview image could not be loaded. This method cannot be relied upon; certain
@@ -29,7 +29,7 @@ public interface OnImageEventListener {
 	 * @param e The exception thrown. This error is logged by the view.
 	 */
 	@MainThread
-	public fun onPreviewLoadError(e: Throwable): Unit = Unit
+	public fun onPreviewLoadError(e: Throwable)
 
 	/**
 	 * Indicates an error initiliasing the decoder when using a tiling, or when loading the full
@@ -39,7 +39,7 @@ public interface OnImageEventListener {
 	 * @param e The exception thrown. This error is also logged by the view.
 	 */
 	@MainThread
-	public fun onImageLoadError(e: Throwable): Unit = Unit
+	public fun onImageLoadError(e: Throwable)
 
 	/**
 	 * Called when an image tile could not be loaded. This method cannot be relied upon; certain
@@ -49,12 +49,12 @@ public interface OnImageEventListener {
 	 * @param e The exception thrown. This error is logged by the view.
 	 */
 	@MainThread
-	public fun onTileLoadError(e: Throwable): Unit = Unit
+	public fun onTileLoadError(e: Throwable)
 
 	/**
 	 * Called when a bitmap set using ImageSource.cachedBitmap is no longer being used by the View.
 	 * This is useful if you wish to manage the bitmap after the preview is shown
 	 */
 	@MainThread
-	public fun onPreviewReleased(): Unit = Unit
+	public fun onPreviewReleased()
 }

@@ -3,6 +3,8 @@ package com.davemorrissey.labs.subscaleview.internal
 import android.graphics.PointF
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import com.davemorrissey.labs.subscaleview.AnimationBuilder
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import kotlin.math.abs
@@ -10,6 +12,8 @@ import kotlin.math.abs
 internal class GestureListener(
 	private val view: SubsamplingScaleImageView,
 ) : GestureDetector.SimpleOnGestureListener() {
+
+	private val interpolator = DecelerateInterpolator()
 
 	override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
 		val vTranslate = view.vTranslate
@@ -24,7 +28,7 @@ internal class GestureListener(
 			AnimationBuilder(
 				view,
 				sCenter = PointF(sCenterXEnd, sCenterYEnd),
-			).withEasing(SubsamplingScaleImageView.EASE_OUT_QUAD)
+			).withInterpolator(interpolator)
 				.withPanLimited(false)
 				.withOrigin(SubsamplingScaleImageView.ORIGIN_FLING).start()
 			return true
