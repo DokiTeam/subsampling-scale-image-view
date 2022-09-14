@@ -836,9 +836,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 		// Abort if not ready
 		if (vTranslate == null) {
-			if (singleDetector != null) {
-				singleDetector!!.onTouchEvent(event)
-			}
+			singleDetector?.onTouchEvent(event)
 			return true
 		}
 		// Detect flings, taps and double taps
