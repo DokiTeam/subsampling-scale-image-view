@@ -11,11 +11,7 @@ import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
-import androidx.annotation.AnyThread
-import androidx.annotation.AttrRes
-import androidx.annotation.CallSuper
-import androidx.annotation.CheckResult
-import androidx.annotation.ColorInt
+import androidx.annotation.*
 import com.davemorrissey.labs.subscaleview.decoder.*
 import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
 import com.davemorrissey.labs.subscaleview.internal.*
@@ -1269,7 +1265,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	private fun loadBitmap(source: Uri, preview: Boolean) {
 		coroutineScope.launch {
-			runCatching {
+			try {
 				val sourceUri = source.toString()
 				debug("BitmapLoadTask.doInBackground")
 				val bitmap = async {
@@ -1282,14 +1278,14 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 						getExifOrientation(context, sourceUri)
 					}
 				}
-				bitmap.await() to orientation.await()
-			}.onSuccess { (bitmap, orientation) ->
 				if (preview) {
-					onPreviewLoaded(bitmap)
+					onPreviewLoaded(bitmap.await())
 				} else {
-					onImageLoaded(bitmap, orientation, false)
+					onImageLoaded(bitmap.await(), orientation.await(), false)
 				}
-			}.onFailure { error ->
+			} catch (e: CancellationException) {
+				throw e
+			} catch (error: Throwable) {
 				Log.e(TAG, "Failed to load bitmap", error)
 				if (preview) {
 					onImageEventListeners.onPreviewLoadError(error)
@@ -1302,7 +1298,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	private fun initTiles(decoderFactory: DecoderFactory<out ImageRegionDecoder>, source: Uri) {
 		coroutineScope.launch {
-			runCatching {
+			try {
 				runInterruptible(backgroundDispatcher) {
 					val sourceUri = source.toString()
 					debug("TilesInitTask.doInBackground")
@@ -1319,11 +1315,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 						sWidth = it.width()
 						sHeight = it.height()
 					}
-					intArrayOf(sWidth, sHeight, exifOrientation)
+					onTilesInited(checkNotNull(decoder), sWidth, sHeight, exifOrientation)
 				}
-			}.onSuccess { xyo ->
-				onTilesInited(checkNotNull(decoder), xyo[0], xyo[1], xyo[2])
-			}.onFailure { error ->
+			} catch (e: CancellationException) {
+				throw e
+			} catch (error: Throwable) {
 				onImageEventListeners.onImageLoadError(error)
 			}
 		}
@@ -1332,8 +1328,8 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun loadTile(decoder: ImageRegionDecoder, tile: Tile) {
 		tile.isLoading = true
 		coroutineScope.launch {
-			runCatching {
-				if (decoder.isReady && tile.isVisible) {
+			try {
+				val bitmap = if (decoder.isReady && tile.isVisible) {
 					runInterruptible(backgroundDispatcher) {
 						debug(
 							"TileLoadTask.doInBackground, tile.sRect=%s, tile.sampleSize=%d",
@@ -1361,11 +1357,12 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 					tile.isLoading = false
 					null
 				}
-			}.onSuccess { bitmap ->
 				tile.bitmap = bitmap
 				tile.isLoading = false
 				onTileLoaded()
-			}.onFailure { error ->
+			} catch (e: CancellationException) {
+				throw e
+			} catch (error: Throwable) {
 				onImageEventListeners.onTileLoadError(error)
 			}
 		}
