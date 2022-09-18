@@ -1,20 +1,15 @@
 package com.davemorrissey.labs.subscaleview.decoder
 
 import android.annotation.SuppressLint
-import android.content.ContentResolver
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.text.TextUtils
-import androidx.annotation.Keep
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.preferredBitmapConfig
-import java.io.InputStream
-
-private const val FILE_PREFIX = "file://"
-private const val ASSET_PREFIX = "$FILE_PREFIX/android_asset/"
-private const val RESOURCE_PREFIX = ContentResolver.SCHEME_ANDROID_RESOURCE + "://"
+import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
+import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
 
 /**
  * Default implementation of [com.davemorrissey.labs.subscaleview.decoder.ImageDecoder]
@@ -36,40 +31,19 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 		options.inPreferredConfig = bitmapConfig
 		return when {
 			uriString.startsWith(RESOURCE_PREFIX) -> {
-				val packageName = uri.authority
-				val res = if (packageName == null || context.packageName == packageName) {
-					context.resources
-				} else {
-					context.packageManager.getResourcesForApplication(packageName)
-				}
-				var id = 0
-				val segments = uri.pathSegments
-				val size = segments.size
-				if (size == 2 && segments[0] == "drawable") {
-					val resName = segments[1]
-					id = res.getIdentifier(resName, "drawable", packageName)
-				} else if (size == 1 && TextUtils.isDigitsOnly(segments[0])) {
-					try {
-						id = segments[0].toInt()
-					} catch (ignored: NumberFormatException) {
-					}
-				}
-				BitmapFactory.decodeResource(context.resources, id, options)
+				decodeResource(context, uri, options)
 			}
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
-				BitmapFactory.decodeStream(context.assets.open(assetName), null, options)!!
+				context.assets.decodeBitmap(assetName, options)
 			}
 			uriString.startsWith(FILE_PREFIX) -> {
 				BitmapFactory.decodeFile(uriString.substring(FILE_PREFIX.length), options)
 			}
 			else -> {
-				val contentResolver = context.contentResolver
-				contentResolver.openInputStream(uri)?.use { inputStream ->
-					BitmapFactory.decodeStream(inputStream, null, options)
-				}
+				context.contentResolver.decodeBitmap(uri, options)
 			}
-		} ?: throw RuntimeException("Skia image region decoder returned null bitmap - image format may not be supported")
+		} ?: throw RuntimeException(DECODER_NULL_MESSAGE)
 	}
 
 	public class Factory @JvmOverloads constructor(

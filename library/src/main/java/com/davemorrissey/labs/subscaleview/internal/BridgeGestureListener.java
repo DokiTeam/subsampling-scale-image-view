@@ -3,7 +3,6 @@ package com.davemorrissey.labs.subscaleview.internal;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 abstract class BridgeGestureListener extends GestureDetector.SimpleOnGestureListener {

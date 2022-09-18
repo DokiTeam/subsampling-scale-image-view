@@ -5,9 +5,8 @@ import android.graphics.Rect
 import android.net.Uri as AndroidUri
 import androidx.annotation.DrawableRes
 import androidx.annotation.ReturnThis
-
-internal const val SCHEME_ASSET = "file:///android_asset/"
-internal const val SCHEME_FILE = "file:///"
+import com.davemorrissey.labs.subscaleview.internal.SCHEME_ASSET
+import com.davemorrissey.labs.subscaleview.internal.SCHEME_FILE
 
 public sealed class ImageSource(
 	public var isTilingEnabled: Boolean,

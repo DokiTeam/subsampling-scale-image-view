@@ -1,20 +1,19 @@
 package com.davemorrissey.labs.subscaleview.decoder
 
 import android.annotation.SuppressLint
-import android.content.ContentResolver
 import android.content.Context
 import android.content.res.AssetManager
 import android.graphics.*
 import android.net.Uri
 import android.text.TextUtils
+import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.preferredBitmapConfig
+import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
-private const val FILE_PREFIX = "file://"
-private const val ASSET_PREFIX = "$FILE_PREFIX/android_asset/"
-private const val RESOURCE_PREFIX = ContentResolver.SCHEME_ANDROID_RESOURCE + "://"
 
 /**
  * Default implementation of [com.davemorrissey.labs.subscaleview.decoder.ImageRegionDecoder]
@@ -38,6 +37,7 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 
 	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
+	@WorkerThread
 	override fun init(context: Context, uri: Uri): Point {
 		val uriString = uri.toString()
 		decoder = when {
@@ -60,30 +60,25 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 					} catch (ignored: NumberFormatException) {
 					}
 				}
-				BitmapRegionDecoder(context.resources.openRawResource(id))
+				context.resources.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
-				BitmapRegionDecoder(
-					context.assets.open(
-						assetName,
-						AssetManager.ACCESS_RANDOM,
-					),
-				)
+				context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
 			}
 			uriString.startsWith(FILE_PREFIX) -> {
 				BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
 			}
 			else -> {
 				val contentResolver = context.contentResolver
-				contentResolver.openInputStream(uri)?.use { inputStream ->
-					BitmapRegionDecoder(inputStream)
-				} ?: error("Content resolver returned null stream. Unable to initialise with uri.")
+				contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it) }
+					?: error("Content resolver returned null stream. Unable to initialise with uri.")
 			}
 		}
 		return Point(decoder!!.width, decoder!!.height)
 	}
 
+	@WorkerThread
 	override fun decodeRegion(sRect: Rect, sampleSize: Int): Bitmap {
 		decodeLock.lock()
 		return try {

@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException
  * Compatibility factory to instantiate decoders with empty public constructors.
  * @param <T> The base type of the decoder this factory will produce.
 </T> */
+@Deprecated("This class use reflection. Avoid using it")
 public class CompatDecoderFactory<T> @JvmOverloads constructor(
 	private val clazz: Class<out T>,
 	private val bitmapConfig: Bitmap.Config? = null,

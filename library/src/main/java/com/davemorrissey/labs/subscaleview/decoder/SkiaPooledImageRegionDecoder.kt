@@ -1,7 +1,6 @@
 package com.davemorrissey.labs.subscaleview.decoder
 
 import android.annotation.SuppressLint
-import android.content.ContentResolver
 import android.content.Context
 import android.content.res.AssetManager
 import android.graphics.*
@@ -9,7 +8,12 @@ import android.net.Uri
 import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.Keep
+import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.preferredBitmapConfig
+import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
+import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReadWriteLock
@@ -21,8 +25,8 @@ import kotlin.concurrent.thread
  *
  * An implementation of [ImageRegionDecoder] using a pool of [BitmapRegionDecoder]s,
  * to provide true parallel loading of tiles. This is only effective if parallel loading has been
- * enabled in the view by calling [com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.setExecutor]
- * with a multi-threaded [Executor] instance.
+ * enabled in the view by changing [com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.backgroundDispatcher]
+ * with a multi-threaded [CoroutineDispatcher] instance.
  *
  *
  * One decoder is initialised when the class is initialised. This is enough to decode base layer tiles.
@@ -102,6 +106,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	 */
 	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
+	@WorkerThread
 	private fun initialiseDecoder() {
 		val uriString = uri.toString()
 		var fileLength = Long.MAX_VALUE
@@ -131,7 +136,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				} catch (e: Exception) {
 					// Pooling disabled
 				}
-				BitmapRegionDecoder(context!!.resources.openRawResource(id))
+				res.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
@@ -141,12 +146,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				} catch (e: Exception) {
 					// Pooling disabled
 				}
-				BitmapRegionDecoder(
-					context!!.assets.open(
-						assetName,
-						AssetManager.ACCESS_RANDOM,
-					),
-				)
+				context!!.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
 			}
 			uriString.startsWith(FILE_PREFIX) -> {
 				val d = BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
@@ -162,9 +162,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 			}
 			else -> {
 				val contentResolver = context!!.contentResolver
-				val d = contentResolver.openInputStream(uri!!)?.use { inputStream ->
-					BitmapRegionDecoder(inputStream)
-				}
+				val d = contentResolver.openInputStream(uri!!)?.use { BitmapRegionDecoder(it) }
 				try {
 					contentResolver.openAssetFileDescriptor(uri!!, "r")?.use { descriptor ->
 						fileLength = descriptor.length
@@ -192,6 +190,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	 * is called and be null once [.recycle] is called. In practice the view can't call this
 	 * method until after [.init], so there will be no blocking on an empty pool.
 	 */
+	@WorkerThread
 	override fun decodeRegion(sRect: Rect, sampleSize: Int): Bitmap {
 		debug("Decode region " + sRect + " on thread " + Thread.currentThread().name)
 		if (sRect.width() < imageDimensions.x || sRect.height() < imageDimensions.y) {
@@ -207,10 +206,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 						val options = BitmapFactory.Options()
 						options.inSampleSize = sampleSize
 						options.inPreferredConfig = bitmapConfig
-						return decoder.decodeRegion(sRect, options)
-							?: throw RuntimeException(
-								"Skia image decoder returned null bitmap - image format may not be supported",
-							)
+						return decoder.decodeRegion(sRect, options) ?: throw RuntimeException(DECODER_NULL_MESSAGE)
 					}
 				} finally {
 					if (decoder != null) {
@@ -296,10 +292,8 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	}
 
 	public companion object {
+
 		private const val TAG = "SkiaPooledDecoder"
-		private const val FILE_PREFIX = "file://"
-		private const val ASSET_PREFIX = "$FILE_PREFIX/android_asset/"
-		private const val RESOURCE_PREFIX = ContentResolver.SCHEME_ANDROID_RESOURCE + "://"
 
 		/**
 		 * Controls logging of debug messages. All instances are affected.

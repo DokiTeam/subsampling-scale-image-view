@@ -8,8 +8,6 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.WorkerThread
 import androidx.exifinterface.media.ExifInterface
-import com.davemorrissey.labs.subscaleview.SCHEME_ASSET
-import com.davemorrissey.labs.subscaleview.SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.VALID_ORIENTATIONS
 import kotlin.math.hypot
@@ -74,8 +72,7 @@ internal fun getExifOrientation(context: Context, sourceUri: String): Int {
 					exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
 			) {
 				ExifInterface.ORIENTATION_NORMAL, ExifInterface.ORIENTATION_UNDEFINED ->
-					exifOrientation =
-						SubsamplingScaleImageView.ORIENTATION_0
+					exifOrientation = SubsamplingScaleImageView.ORIENTATION_0
 				ExifInterface.ORIENTATION_ROTATE_90 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_90
 				ExifInterface.ORIENTATION_ROTATE_180 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_180
 				ExifInterface.ORIENTATION_ROTATE_270 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_270

@@ -10,7 +10,7 @@ import java.util.concurrent.Semaphore
 internal class DecoderPool {
 
 	private val available = Semaphore(0, true)
-	private val decoders: MutableMap<BitmapRegionDecoder?, Boolean> = ConcurrentHashMap()
+	private val decoders = ConcurrentHashMap<BitmapRegionDecoder?, Boolean>()
 
 	/**
 	 * Returns false if there is at least one decoder in the pool.
@@ -56,7 +56,7 @@ internal class DecoderPool {
 	 * While there are decoders in the map, wait until each is available before acquiring,
 	 * recycling and removing it. After this is called, any call to [.acquire] will
 	 * block forever, so this call should happen within a write lock, and all calls to
-	 * [.acquire] should be made within a read lock so they cannot end up blocking on
+	 * [.acquire] should be made within a read lock, so they cannot end up blocking on
 	 * the semaphore when it has no permits.
 	 */
 	@Synchronized

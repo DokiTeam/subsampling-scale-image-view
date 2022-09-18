@@ -99,7 +99,7 @@ internal class TouchEventDelegate(
 									vCenterEndX,
 									view.vCenterStart!!.y,
 									vCenterEndY,
-								) > 5 || Math.abs(vDistEnd - view.vDistStart) > 5 || view.isPanning
+								) > 5 || abs(vDistEnd - view.vDistStart) > 5 || view.isPanning
 							)
 						) {
 							view.isZooming = true
@@ -199,8 +199,8 @@ internal class TouchEventDelegate(
 					} else if (!view.isZooming) {
 						// One finger pan - translate the image. We do this calculation even with pan disabled so click
 						// and long click behaviour is preserved.
-						val dx = Math.abs(event.x - view.vCenterStart!!.x)
-						val dy = Math.abs(event.y - view.vCenterStart!!.y)
+						val dx = abs(event.x - view.vCenterStart!!.x)
+						val dy = abs(event.y - view.vCenterStart!!.y)
 
 						// On the Samsung S6 long click event does not work, because the dx > 5 usually true
 						val offset = density * 5
