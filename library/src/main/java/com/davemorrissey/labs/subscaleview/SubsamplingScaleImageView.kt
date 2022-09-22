@@ -85,7 +85,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	@get:ColorInt
 	public var tileBackgroundColor: Int
 		get() = tileBgPaint?.color ?: Color.TRANSPARENT
-
 		/**
 		 * Set a solid color to render behind tiles, useful for displaying transparent PNGs.
 		 * @param value Background color for tiles.
@@ -306,7 +305,8 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		val ta = context.obtainStyledAttributes(attrs, R.styleable.SubsamplingScaleImageView, defStyleAttr, 0)
 		isPanEnabled = ta.getBoolean(R.styleable.SubsamplingScaleImageView_panEnabled, isPanEnabled)
 		isZoomEnabled = ta.getBoolean(R.styleable.SubsamplingScaleImageView_zoomEnabled, isZoomEnabled)
-		isQuickScaleEnabled = ta.getBoolean(R.styleable.SubsamplingScaleImageView_quickScaleEnabled, isQuickScaleEnabled)
+		isQuickScaleEnabled =
+			ta.getBoolean(R.styleable.SubsamplingScaleImageView_quickScaleEnabled, isQuickScaleEnabled)
 		stateRestoreStrategy = ta.getInt(R.styleable.SubsamplingScaleImageView_restoreStrategy, stateRestoreStrategy)
 		tileBackgroundColor = ta.getColor(
 			R.styleable.SubsamplingScaleImageView_tileBackgroundColor,
@@ -345,6 +345,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 					this.bitmapIsCached = previewSource.isCached
 					onPreviewLoaded(previewSource.bitmap)
 				}
+
 				else -> {
 					val uri = (previewSource as? ImageSource.Uri)?.uri ?: Uri.parse(
 						ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.packageName + "/" +
@@ -374,6 +375,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 					onImageLoaded(imageSource.bitmap, ORIENTATION_0, imageSource.isCached)
 				}
 			}
+
 			else -> {
 				sRegion = imageSource.region
 				@Suppress("KotlinConstantConditions")
@@ -381,6 +383,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 					is ImageSource.Resource -> Uri.parse(
 						ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.packageName + "/" + imageSource.resourceId,
 					)
+
 					is ImageSource.Uri -> imageSource.uri
 					is ImageSource.Bitmap -> error("")
 				}.also { uri ->
@@ -1200,9 +1203,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			minimumScaleType == SCALE_TYPE_CENTER_CROP || minimumScaleType == SCALE_TYPE_START -> {
 				maxOf((width - hPadding) / sWidth().toFloat(), (height - vPadding) / sHeight().toFloat())
 			}
+
 			minimumScaleType == SCALE_TYPE_CUSTOM && _minScale > 0 -> {
 				_minScale
 			}
+
 			else -> {
 				minOf((width - hPadding) / sWidth().toFloat(), (height - vPadding) / sHeight().toFloat())
 			}
@@ -1299,14 +1304,17 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun initTiles(decoderFactory: DecoderFactory<out ImageRegionDecoder>, source: Uri) {
 		coroutineScope.launch {
 			try {
-				runInterruptible(backgroundDispatcher) {
-					val sourceUri = source.toString()
-					debug("TilesInitTask.doInBackground")
+				val sourceUri = source.toString()
+				val exifOrientation = async {
+					runInterruptible(backgroundDispatcher) {
+						getExifOrientation(context, sourceUri)
+					}
+				}
+				val (w, h) = runInterruptible(backgroundDispatcher) {
 					decoder = decoderFactory.make()
 					val dimensions = checkNotNull(decoder).init(context, source)
 					var sWidth = dimensions.x
 					var sHeight = dimensions.y
-					val exifOrientation = getExifOrientation(context, sourceUri)
 					sRegion?.also {
 						it.left = it.left.coerceAtLeast(0)
 						it.top = it.top.coerceAtLeast(0)
@@ -1315,8 +1323,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 						sWidth = it.width()
 						sHeight = it.height()
 					}
-					onTilesInited(checkNotNull(decoder), sWidth, sHeight, exifOrientation)
+					sWidth to sHeight
 				}
+				onTilesInited(checkNotNull(decoder), w, h, exifOrientation.await())
 			} catch (e: CancellationException) {
 				throw e
 			} catch (error: Throwable) {
@@ -1447,7 +1456,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		when (getRequiredRotation()) {
 			ORIENTATION_0 -> target.set(sRect)
 			ORIENTATION_90 -> target[sRect.top, sHeight - sRect.right, sRect.bottom] = sHeight - sRect.left
-			ORIENTATION_180 -> target[sWidth - sRect.right, sHeight - sRect.bottom, sWidth - sRect.left] = sHeight - sRect.top
+			ORIENTATION_180 -> target[sWidth - sRect.right, sHeight - sRect.bottom, sWidth - sRect.left] =
+				sHeight - sRect.top
+
 			else -> target[sWidth - sRect.bottom, sRect.left, sWidth - sRect.top] = sRect.right
 		}
 	}
@@ -1550,10 +1561,12 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				vTranslate.x = vTranslate.x.coerceAtLeast(width / 2f - scaleWidth)
 				vTranslate.y = vTranslate.y.coerceAtLeast(height / 2f - scaleHeight)
 			}
+
 			center -> {
 				vTranslate.x = vTranslate.x.coerceAtLeast(width - scaleWidth)
 				vTranslate.y = vTranslate.y.coerceAtLeast(height - scaleHeight)
 			}
+
 			else -> {
 				vTranslate.x = vTranslate.x.coerceAtLeast(-scaleWidth)
 				vTranslate.y = vTranslate.y.coerceAtLeast(-scaleHeight)
@@ -1572,10 +1585,12 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				maxTx = (width / 2f).coerceAtLeast(0f)
 				maxTy = (height / 2f).coerceAtLeast(0f)
 			}
+
 			center -> {
 				maxTx = ((width - scaleWidth) * xPaddingRatio).coerceAtLeast(0f)
 				maxTy = ((height - scaleHeight) * yPaddingRatio).coerceAtLeast(0f)
 			}
+
 			else -> {
 				maxTx = width.toFloat().coerceAtLeast(0f)
 				maxTy = height.toFloat().coerceAtLeast(0f)
@@ -1618,11 +1633,13 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			doubleTapZoomStyle == ZOOM_FOCUS_CENTER_IMMEDIATE -> {
 				setScaleAndCenter(targetScale, sCenter)
 			}
+
 			doubleTapZoomStyle == ZOOM_FOCUS_CENTER || !zoomIn || !isPanEnabled -> {
 				AnimationBuilder(this, targetScale, sCenter).withInterruptible(false)
 					.withDuration(doubleTapZoomDuration.toLong())
 					.withOrigin(ORIGIN_DOUBLE_TAP_ZOOM).start()
 			}
+
 			doubleTapZoomStyle == ZOOM_FOCUS_FIXED -> {
 				AnimationBuilder(this, targetScale, sCenter, vFocus).withInterruptible(false)
 					.withDuration(doubleTapZoomDuration.toLong())
@@ -1864,7 +1881,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	/**
 	 * Called once when the view is initialised, has dimensions, and will display an image on the
 	 * next draw. This is triggered at the same time as
-	 { @link OnImageEventListener#onReady() } but
+	{ @link OnImageEventListener#onReady() } but
 	 * allows a subclass to receive this event without using a listener.
 	 */
 	protected open fun onReady(): Unit = Unit
