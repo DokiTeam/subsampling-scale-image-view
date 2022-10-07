@@ -1527,12 +1527,16 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun sendStateChanged(oldScale: Float, oldVTranslate: PointF, origin: Int) {
 		onStateChangedListener?.run {
 			if (scale != oldScale) {
+				@Suppress("DEPRECATION")
 				onScaleChanged(scale, origin)
+				onScaleChanged(this@SubsamplingScaleImageView, scale, origin)
 			}
 			if (vTranslate != oldVTranslate) {
 				val center = getCenter()
 				if (center != null) {
+					@Suppress("DEPRECATION")
 					onCenterChanged(center, origin)
+					onCenterChanged(this@SubsamplingScaleImageView, center, origin)
 				}
 			}
 		}
