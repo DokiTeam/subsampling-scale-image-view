@@ -80,3 +80,9 @@ internal fun AssetManager.decodeBitmap(name: String, options: BitmapFactory.Opti
 		BitmapFactory.decodeStream(inputStream, null, options)
 	}
 }
+
+internal fun ensureNotInterrupted() {
+	if (Thread.interrupted()) {
+		throw InterruptedException()
+	}
+}
