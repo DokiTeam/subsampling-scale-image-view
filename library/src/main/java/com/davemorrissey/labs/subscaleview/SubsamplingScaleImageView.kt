@@ -295,7 +295,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	// The logical density of the display
 	private val density = context.resources.displayMetrics.density
-	private val coroutineScope = CoroutineScope(Dispatchers.Main.immediate + InternalErrorHandler() + SupervisorJob())
+	private val coroutineScope by ViewScopeHolder(Dispatchers.Main.immediate + InternalErrorHandler())
 
 	init {
 		setMinimumDpi(160)
