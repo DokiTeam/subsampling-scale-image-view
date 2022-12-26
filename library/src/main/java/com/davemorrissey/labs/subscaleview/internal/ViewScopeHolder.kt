@@ -5,6 +5,7 @@ import android.view.View
 import androidx.core.view.ViewCompat
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -12,6 +13,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
+@DelicateCoroutinesApi
 internal class ViewScopeHolder(
 	private val context: CoroutineContext,
 ) : View.OnAttachStateChangeListener, ReadOnlyProperty<View, CoroutineScope> {
