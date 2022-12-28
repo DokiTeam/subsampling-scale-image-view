@@ -12,6 +12,7 @@ import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.*
+import androidx.lifecycle.LifecycleOwner
 import com.davemorrissey.labs.subscaleview.decoder.*
 import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
 import com.davemorrissey.labs.subscaleview.internal.*
@@ -1038,6 +1039,18 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	private fun viewToSourceY(vy: Float): Float {
 		return (vy - (vTranslate ?: return Float.NaN).y) / scale
+	}
+
+	/**
+	 * Cancel all loading tasks when [owner] is destroyed.
+	 * Warning: after the [owner] is destroyed [SubsamplingScaleImageView] becomes unusable
+	 */
+	public fun bindToLifecycle(owner: LifecycleOwner) {
+		owner.lifecycle.addObserver(ClearingLifecycleObserver(this))
+	}
+
+	internal fun cancelCoroutineScope() {
+		coroutineScope.cancel()
 	}
 
 	private fun reset(isNewImage: Boolean) {
