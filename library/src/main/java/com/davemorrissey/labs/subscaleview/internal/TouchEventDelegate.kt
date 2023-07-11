@@ -164,7 +164,9 @@ internal class TouchEventDelegate(
 								multiplier = if (isUpwards) 1 + spanDiff else 1 - spanDiff
 							}
 							val previousScale = scale.toDouble()
-							scale = (scale * multiplier).coerceIn(view.minScale(), view.maxScale)
+							scale = (scale * multiplier)
+								.coerceAtLeast(view.minScale())
+								.coerceAtMost(view.maxScale)
 							view.scale = scale
 							if (view.isPanEnabled) {
 								val vLeftStart = view.vCenterStart!!.x - view.vTranslateStart!!.x
