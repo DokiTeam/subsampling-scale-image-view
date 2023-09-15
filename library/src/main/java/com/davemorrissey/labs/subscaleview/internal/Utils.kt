@@ -6,7 +6,11 @@ import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import android.view.ViewConfiguration
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import androidx.annotation.WorkerThread
+import androidx.core.view.ViewConfigurationCompat
 import androidx.exifinterface.media.ExifInterface
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.VALID_ORIENTATIONS
@@ -73,6 +77,7 @@ internal fun getExifOrientation(context: Context, sourceUri: String): Int {
 			) {
 				ExifInterface.ORIENTATION_NORMAL, ExifInterface.ORIENTATION_UNDEFINED ->
 					exifOrientation = SubsamplingScaleImageView.ORIENTATION_0
+
 				ExifInterface.ORIENTATION_ROTATE_90 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_90
 				ExifInterface.ORIENTATION_ROTATE_180 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_180
 				ExifInterface.ORIENTATION_ROTATE_270 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_270
@@ -83,4 +88,24 @@ internal fun getExifOrientation(context: Context, sourceUri: String): Int {
 		}
 	}
 	return exifOrientation
+}
+
+internal fun SubsamplingScaleImageView.scaleBy(factor: Float): Boolean {
+	val center = getCenter() ?: return false
+	val newScale = scale * factor
+	return animateScaleAndCenter(newScale, center)?.apply {
+		withDuration(resources.getInteger(android.R.integer.config_shortAnimTime).toLong())
+		withInterpolator(DecelerateInterpolator())
+		start()
+	} != null
+}
+
+internal fun SubsamplingScaleImageView.panBy(dx: Float, dy: Float): Boolean {
+	val newCenter = getCenter() ?: return false
+	newCenter.offset(dx, dy)
+	return animateScaleAndCenter(scale, newCenter)?.apply {
+		withDuration(resources.getInteger(android.R.integer.config_shortAnimTime).toLong())
+		withInterpolator(DecelerateInterpolator())
+		start()
+	} != null
 }

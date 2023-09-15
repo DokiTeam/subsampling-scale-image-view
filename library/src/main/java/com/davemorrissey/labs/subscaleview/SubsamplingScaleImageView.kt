@@ -9,14 +9,17 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import androidx.annotation.*
 import androidx.lifecycle.LifecycleOwner
 import com.davemorrissey.labs.subscaleview.decoder.*
 import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
 import com.davemorrissey.labs.subscaleview.internal.*
 import kotlinx.coroutines.*
+import java.security.Key
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.min
@@ -1889,12 +1892,60 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		}
 	}
 
+	override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+		val pan = density * 64f
+		return when (keyCode) {
+			KeyEvent.KEYCODE_NUMPAD_ADD,
+			KeyEvent.KEYCODE_PLUS -> scaleBy(1.4f)
+
+			KeyEvent.KEYCODE_NUMPAD_SUBTRACT,
+			KeyEvent.KEYCODE_MINUS -> scaleBy(0.6f)
+
+			KeyEvent.KEYCODE_DPAD_UP -> isScaled() && panBy(0f, -pan)
+			KeyEvent.KEYCODE_DPAD_UP_RIGHT -> isScaled() && panBy(pan, -pan)
+			KeyEvent.KEYCODE_DPAD_RIGHT -> isScaled() && panBy(pan, 0f)
+			KeyEvent.KEYCODE_DPAD_DOWN_RIGHT -> isScaled() && panBy(pan, pan)
+			KeyEvent.KEYCODE_DPAD_DOWN -> isScaled() && panBy(0f, pan)
+			KeyEvent.KEYCODE_DPAD_DOWN_LEFT -> isScaled() && panBy(-pan, pan)
+			KeyEvent.KEYCODE_DPAD_LEFT -> isScaled() && panBy(-pan, 0f)
+			KeyEvent.KEYCODE_DPAD_UP_LEFT -> isScaled() && panBy(-pan, -pan)
+			KeyEvent.KEYCODE_ESCAPE,
+			KeyEvent.KEYCODE_DPAD_CENTER -> isScaled() && scaleBy(0f)
+
+			else -> super.onKeyDown(keyCode, event)
+		}
+	}
+
+	override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+		return when (keyCode) {
+			KeyEvent.KEYCODE_NUMPAD_ADD,
+			KeyEvent.KEYCODE_PLUS,
+			KeyEvent.KEYCODE_NUMPAD_SUBTRACT,
+			KeyEvent.KEYCODE_MINUS -> true
+
+			KeyEvent.KEYCODE_DPAD_UP,
+			KeyEvent.KEYCODE_DPAD_UP_RIGHT,
+			KeyEvent.KEYCODE_DPAD_RIGHT,
+			KeyEvent.KEYCODE_DPAD_DOWN_RIGHT,
+			KeyEvent.KEYCODE_DPAD_DOWN,
+			KeyEvent.KEYCODE_DPAD_DOWN_LEFT,
+			KeyEvent.KEYCODE_DPAD_LEFT,
+			KeyEvent.KEYCODE_DPAD_UP_LEFT,
+			KeyEvent.KEYCODE_ESCAPE,
+			KeyEvent.KEYCODE_DPAD_CENTER -> isScaled()
+
+			else -> super.onKeyDown(keyCode, event)
+		}
+	}
+
 	/**
 	 * For debug overlays. Scale pixel value according to screen density.
 	 */
 	private fun px(px: Int): Int {
 		return (density * px).toInt()
 	}
+
+	private fun isScaled() = scale > minScale
 
 	/**
 	 * Called once when the view is initialised, has dimensions, and will display an image on the

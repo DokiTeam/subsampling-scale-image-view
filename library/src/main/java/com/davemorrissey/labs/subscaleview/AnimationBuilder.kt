@@ -1,6 +1,7 @@
 package com.davemorrissey.labs.subscaleview
 
 import android.graphics.PointF
+import android.provider.Settings
 import android.util.Log
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
@@ -10,6 +11,7 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.E
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.EASE_OUT_QUAD
 import com.davemorrissey.labs.subscaleview.internal.Anim
 import com.davemorrissey.labs.subscaleview.internal.ScaleAndTranslate
+import kotlin.math.roundToLong
 
 /**
  * Builder class used to set additional options for a scale animation. Create an instance using [.animateScale],
@@ -21,9 +23,15 @@ public class AnimationBuilder internal constructor(
 	sCenter: PointF = checkNotNull(view.getCenter()),
 	private val vFocus: PointF? = null,
 ) {
+
+	private val durationScale = Settings.Global.getFloat(
+		view.context.contentResolver,
+		Settings.Global.ANIMATOR_DURATION_SCALE,
+		1f,
+	)
 	private val targetScale: Float = scale
 	private val targetSCenter: PointF = sCenter
-	private var duration: Long = 500
+	private var duration: Long = view.resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
 	private var interpolator: Interpolator = AccelerateDecelerateInterpolator()
 	private var origin = SubsamplingScaleImageView.ORIGIN_ANIM
 	private var isInterruptible = true
@@ -129,6 +137,10 @@ public class AnimationBuilder internal constructor(
 			targetScale,
 			PointF(),
 		) else targetSCenter
+		if (durationScale <= 0f) { // animation is disabled system-wide
+			view.setScaleAndCenter(targetScale, targetSCenter)
+			return
+		}
 		val currentCenter = checkNotNull(view.getCenter())
 		view.anim = Anim(
 			scaleStart = view.scale,
@@ -137,7 +149,7 @@ public class AnimationBuilder internal constructor(
 			sCenterStart = currentCenter,
 			sCenterEnd = targetSCenter,
 			vFocusStart = view.sourceToViewCoord(targetSCenter),
-			duration = duration,
+			duration = (duration * durationScale).roundToLong(),
 			interruptible = isInterruptible,
 			interpolator = interpolator,
 			origin = origin,
