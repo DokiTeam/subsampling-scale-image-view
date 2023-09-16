@@ -27,7 +27,6 @@ import androidx.annotation.CallSuper
 import androidx.annotation.CheckResult
 import androidx.annotation.ColorInt
 import androidx.lifecycle.LifecycleOwner
-import com.davemorrissey.labs.subscaleview.decoder.BitmapInterceptor
 import com.davemorrissey.labs.subscaleview.decoder.DecoderFactory
 import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
 import com.davemorrissey.labs.subscaleview.decoder.ImageRegionDecoder
@@ -57,7 +56,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
-import java.util.LinkedList
 import java.util.Locale
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.min

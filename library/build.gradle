@@ -34,12 +34,12 @@ configurations {
 
 dependencies {
     implementation "androidx.customview:customview:1.1.0"
-    javadocs 'androidx.annotation:annotation:1.5.0'
-    javadocs 'androidx.exifinterface:exifinterface:1.3.5'
-    implementation 'androidx.annotation:annotation:1.5.0'
-    implementation 'androidx.exifinterface:exifinterface:1.3.5'
-	implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
-	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    javadocs 'androidx.annotation:annotation:1.7.0'
+    javadocs 'androidx.exifinterface:exifinterface:1.3.6'
+    implementation 'androidx.annotation:annotation:1.7.0'
+    implementation 'androidx.exifinterface:exifinterface:1.3.6'
+	implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 }
 
 task javadoc(type: Javadoc) {
