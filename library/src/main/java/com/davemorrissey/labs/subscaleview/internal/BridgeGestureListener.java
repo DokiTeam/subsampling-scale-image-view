@@ -5,7 +5,6 @@ import android.view.MotionEvent;
 
 import androidx.annotation.Nullable;
 
-/** @noinspection DataFlowIssue*/
 abstract class BridgeGestureListener extends GestureDetector.SimpleOnGestureListener {
 
 	@Override
