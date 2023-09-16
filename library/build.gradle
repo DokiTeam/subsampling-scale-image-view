@@ -9,7 +9,7 @@ archivesBaseName = 'subsampling-scale-image-view-androidx'
 version = '4.0'
 
 android {
-	compileSdk = 33
+    compileSdkVersion 33
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 33
@@ -34,12 +34,12 @@ configurations {
 
 dependencies {
     implementation 'androidx.customview:customview:1.1.0'
-    javadocs 'androidx.annotation:annotation:1.7.0'
+    javadocs 'androidx.annotation:annotation:1.6.0'
     javadocs 'androidx.exifinterface:exifinterface:1.3.6'
-    implementation 'androidx.annotation:annotation:1.7.0'
+    implementation 'androidx.annotation:annotation:1.6.0'
     implementation 'androidx.exifinterface:exifinterface:1.3.6'
-	implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
-	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+	implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
+	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2'
 }
 
 task javadoc(type: Javadoc) {

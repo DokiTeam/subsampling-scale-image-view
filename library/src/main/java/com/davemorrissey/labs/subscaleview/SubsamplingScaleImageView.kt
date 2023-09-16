@@ -248,7 +248,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	// Tile and image decoding
 	private var decoder: ImageRegionDecoder? = null
 	private val decoderLock = ReentrantReadWriteLock(true)
-	private val interceptors = LinkedList<BitmapInterceptor>()
 	public var bitmapDecoderFactory: DecoderFactory<out ImageDecoder> = SkiaImageDecoder.Factory()
 	public var regionDecoderFactory: DecoderFactory<out ImageRegionDecoder> = SkiaImageRegionDecoder.Factory()
 
@@ -1330,7 +1329,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				debug("BitmapLoadTask.doInBackground")
 				val bitmap = async {
 					runInterruptible(backgroundDispatcher) {
-						doIntercept(bitmapDecoderFactory.make().decode(context, source), isTile = false)
+						bitmapDecoderFactory.make().decode(context, source)
 					}
 				}
 				val orientation = async {
@@ -1408,7 +1407,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 								if (sRegion != null) {
 									tile.fileSRect.offset(sRegion!!.left, sRegion!!.top)
 								}
-								doIntercept(decoder.decodeRegion(tile.fileSRect, tile.sampleSize), isTile = true)
+								decoder.decodeRegion(tile.fileSRect, tile.sampleSize)
 							} else {
 								tile.isLoading = false
 								null
@@ -1997,21 +1996,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * Called once when the full size image or its base layer tiles have been loaded.
 	 */
 	protected open fun onImageLoaded() {}
-
-	private fun doIntercept(bitmap: Bitmap, isTile: Boolean): Bitmap {
-		if (interceptors.isEmpty()) {
-			return bitmap
-		}
-		var result: Bitmap = bitmap
-		for (interceptor in interceptors) {
-			val newResult = interceptor.intercept(result, isTile)
-			if (newResult !== result) {
-				result.recycle()
-				result = newResult
-			}
-		}
-		return result
-	}
 
 	public companion object {
 
