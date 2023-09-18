@@ -9,7 +9,7 @@ archivesBaseName = 'subsampling-scale-image-view-androidx'
 version = '4.0'
 
 android {
-    compileSdkVersion 33
+    compileSdk 33
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 33

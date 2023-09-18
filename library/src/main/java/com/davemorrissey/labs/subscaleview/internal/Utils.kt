@@ -6,11 +6,8 @@ import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import android.view.ViewConfiguration
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import androidx.annotation.WorkerThread
-import androidx.core.view.ViewConfigurationCompat
 import androidx.exifinterface.media.ExifInterface
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.VALID_ORIENTATIONS

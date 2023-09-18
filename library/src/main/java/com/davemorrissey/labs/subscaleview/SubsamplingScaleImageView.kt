@@ -18,14 +18,18 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
+import android.view.animation.DecelerateInterpolator
 import androidx.annotation.AnyThread
 import androidx.annotation.AttrRes
 import androidx.annotation.CallSuper
 import androidx.annotation.CheckResult
 import androidx.annotation.ColorInt
+import androidx.core.view.ViewConfigurationCompat
 import androidx.lifecycle.LifecycleOwner
 import com.davemorrissey.labs.subscaleview.decoder.DecoderFactory
 import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
@@ -335,6 +339,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	// The logical density of the display
 	private val density = context.resources.displayMetrics.density
+	private val viewConfig = ViewConfiguration.get(context)
 	private val coroutineScope = CoroutineScope(Dispatchers.Main.immediate + InternalErrorHandler() + SupervisorJob())
 
 	init {
@@ -1971,6 +1976,32 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 			else -> super.onKeyDown(keyCode, event)
 		}
+	}
+
+	override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+		if (event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)) {
+			if (event.actionMasked == MotionEvent.ACTION_SCROLL) {
+				val withCtrl = event.metaState and KeyEvent.META_CTRL_MASK != 0
+				if (withCtrl) {
+					val center = PointF(event.x, event.y)
+					val d = event.getAxisValue(MotionEvent.AXIS_VSCROLL) *
+						ViewConfigurationCompat.getScaledVerticalScrollFactor(viewConfig, context)
+					(animateScaleAndCenter(scale + d, center) ?: return false)
+						.withInterpolator(DecelerateInterpolator())
+						.withDuration(resources.getInteger(android.R.integer.config_shortAnimTime).toLong())
+						.start()
+					return true
+				} else if (scale > minScale) {
+					return panBy(
+						dx = -event.getAxisValue(MotionEvent.AXIS_HSCROLL) *
+							ViewConfigurationCompat.getScaledHorizontalScrollFactor(viewConfig, context),
+						dy = -event.getAxisValue(MotionEvent.AXIS_VSCROLL) *
+							ViewConfigurationCompat.getScaledVerticalScrollFactor(viewConfig, context),
+					)
+				}
+			}
+		}
+		return super.onGenericMotionEvent(event)
 	}
 
 	/**

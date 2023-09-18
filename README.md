@@ -9,6 +9,7 @@ Subsampling Scale Image View (Kotatsu fork)
 - Support for ColorFilter
 - Automatically stores and restores state (zoom and center)
 - Using Interpolator for animation
+- Handle mouse and keyboard/dpad events for scaling and panning
 
 ---
 ### Usage
