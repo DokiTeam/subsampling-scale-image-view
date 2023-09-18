@@ -10,23 +10,32 @@ archivesBaseName = 'subsampling-scale-image-view-androidx'
 version = '4.0'
 
 android {
-    compileSdk 33
+	compileSdk = 34
+	buildToolsVersion = '34.0.0'
+	namespace = 'com.davemorrissey.labs.subscaleview'
+
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 33
+		minSdk = 21
+		targetSdk = 34
         consumerProguardFiles 'proguard-rules.txt'
     }
 
-    compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
-    }
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
+	}
 
 	kotlinOptions {
-		jvmTarget = JavaVersion.VERSION_1_8.toString()
+		jvmTarget = JavaVersion.VERSION_17.toString()
 		freeCompilerArgs += '-Xexplicit-api=warning'
 	}
-    namespace 'com.davemorrissey.labs.subscaleview'
+
+	buildTypes {
+		release {
+			minifyEnabled false
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+		}
+	}
 }
 
 configurations {
@@ -34,6 +43,7 @@ configurations {
 }
 
 dependencies {
+	implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
     implementation "androidx.customview:customview:1.1.0"
     javadocs 'androidx.annotation:annotation:1.7.0'
     javadocs 'androidx.exifinterface:exifinterface:1.3.6'
@@ -41,6 +51,19 @@ dependencies {
     implementation 'androidx.exifinterface:exifinterface:1.3.6'
 	implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
 	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+}
+
+afterEvaluate {
+	publishing {
+		publications {
+			release(MavenPublication) {
+				from components.release
+				groupId = 'com.github.KotatsuApp'
+				artifactId = 'subsampling-scale-image-view-androidx'
+				version = '4.0'
+			}
+		}
+	}
 }
 
 task javadoc(type: Javadoc) {
