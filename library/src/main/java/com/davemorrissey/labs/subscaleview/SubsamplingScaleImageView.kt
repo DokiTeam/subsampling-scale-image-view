@@ -1935,33 +1935,37 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
 		val pan = density * 64f
 		return when (keyCode) {
+			KeyEvent.KEYCODE_ZOOM_IN,
 			KeyEvent.KEYCODE_NUMPAD_ADD,
-			KeyEvent.KEYCODE_PLUS -> scaleBy(1.4f)
+			KeyEvent.KEYCODE_PLUS -> isZoomEnabled && scaleBy(1.4f)
 
+			KeyEvent.KEYCODE_ZOOM_OUT,
 			KeyEvent.KEYCODE_NUMPAD_SUBTRACT,
-			KeyEvent.KEYCODE_MINUS -> scaleBy(0.6f)
+			KeyEvent.KEYCODE_MINUS -> isZoomEnabled && scaleBy(0.6f)
 
-			KeyEvent.KEYCODE_DPAD_UP -> isScaled() && panBy(0f, -pan)
-			KeyEvent.KEYCODE_DPAD_UP_RIGHT -> isScaled() && panBy(pan, -pan)
-			KeyEvent.KEYCODE_DPAD_RIGHT -> isScaled() && panBy(pan, 0f)
-			KeyEvent.KEYCODE_DPAD_DOWN_RIGHT -> isScaled() && panBy(pan, pan)
-			KeyEvent.KEYCODE_DPAD_DOWN -> isScaled() && panBy(0f, pan)
-			KeyEvent.KEYCODE_DPAD_DOWN_LEFT -> isScaled() && panBy(-pan, pan)
-			KeyEvent.KEYCODE_DPAD_LEFT -> isScaled() && panBy(-pan, 0f)
-			KeyEvent.KEYCODE_DPAD_UP_LEFT -> isScaled() && panBy(-pan, -pan)
+			KeyEvent.KEYCODE_DPAD_UP -> isPanEnabled && isScaled() && panBy(0f, -pan)
+			KeyEvent.KEYCODE_DPAD_UP_RIGHT -> isPanEnabled && isScaled() && panBy(pan, -pan)
+			KeyEvent.KEYCODE_DPAD_RIGHT -> isPanEnabled && isScaled() && panBy(pan, 0f)
+			KeyEvent.KEYCODE_DPAD_DOWN_RIGHT -> isPanEnabled && isScaled() && panBy(pan, pan)
+			KeyEvent.KEYCODE_DPAD_DOWN -> isPanEnabled && isScaled() && panBy(0f, pan)
+			KeyEvent.KEYCODE_DPAD_DOWN_LEFT -> isPanEnabled && isScaled() && panBy(-pan, pan)
+			KeyEvent.KEYCODE_DPAD_LEFT -> isPanEnabled && isScaled() && panBy(-pan, 0f)
+			KeyEvent.KEYCODE_DPAD_UP_LEFT -> isPanEnabled && isScaled() && panBy(-pan, -pan)
 			KeyEvent.KEYCODE_ESCAPE,
-			KeyEvent.KEYCODE_DPAD_CENTER -> isScaled() && scaleBy(0f)
+			KeyEvent.KEYCODE_DPAD_CENTER -> isZoomEnabled && isScaled() && scaleBy(0f)
 
-			else -> super.onKeyDown(keyCode, event)
-		}
+			else -> false
+		} || super.onKeyDown(keyCode, event)
 	}
 
 	override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
 		return when (keyCode) {
+			KeyEvent.KEYCODE_ZOOM_OUT,
+			KeyEvent.KEYCODE_ZOOM_IN,
 			KeyEvent.KEYCODE_NUMPAD_ADD,
 			KeyEvent.KEYCODE_PLUS,
 			KeyEvent.KEYCODE_NUMPAD_SUBTRACT,
-			KeyEvent.KEYCODE_MINUS -> true
+			KeyEvent.KEYCODE_MINUS -> isZoomEnabled
 
 			KeyEvent.KEYCODE_DPAD_UP,
 			KeyEvent.KEYCODE_DPAD_UP_RIGHT,
@@ -1970,9 +1974,10 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			KeyEvent.KEYCODE_DPAD_DOWN,
 			KeyEvent.KEYCODE_DPAD_DOWN_LEFT,
 			KeyEvent.KEYCODE_DPAD_LEFT,
-			KeyEvent.KEYCODE_DPAD_UP_LEFT,
+			KeyEvent.KEYCODE_DPAD_UP_LEFT -> isPanEnabled && isScaled()
+
 			KeyEvent.KEYCODE_ESCAPE,
-			KeyEvent.KEYCODE_DPAD_CENTER -> isScaled()
+			KeyEvent.KEYCODE_DPAD_CENTER -> isZoomEnabled && isScaled()
 
 			else -> super.onKeyDown(keyCode, event)
 		}
@@ -1983,6 +1988,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			if (event.actionMasked == MotionEvent.ACTION_SCROLL) {
 				val withCtrl = event.metaState and KeyEvent.META_CTRL_MASK != 0
 				if (withCtrl) {
+					if (!isZoomEnabled) {
+						return super.onGenericMotionEvent(event)
+					}
 					val center = PointF(event.x, event.y)
 					val d = event.getAxisValue(MotionEvent.AXIS_VSCROLL) *
 						ViewConfigurationCompat.getScaledVerticalScrollFactor(viewConfig, context)
@@ -1992,8 +2000,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 						.start()
 					return true
 				} else if (scale > minScale) {
+					if (!isPanEnabled) {
+						return super.onGenericMotionEvent(event)
+					}
 					return panBy(
-						dx = -event.getAxisValue(MotionEvent.AXIS_HSCROLL) *
+						dx = event.getAxisValue(MotionEvent.AXIS_HSCROLL) *
 							ViewConfigurationCompat.getScaledHorizontalScrollFactor(viewConfig, context),
 						dy = -event.getAxisValue(MotionEvent.AXIS_VSCROLL) *
 							ViewConfigurationCompat.getScaledVerticalScrollFactor(viewConfig, context),
