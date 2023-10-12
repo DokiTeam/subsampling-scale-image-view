@@ -2139,6 +2139,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 		// A global preference for bitmap format, available to decoder classes that respect it
 		@JvmStatic
+		@Deprecated("This should be managed in decoder", level = DeprecationLevel.ERROR)
 		public var preferredBitmapConfig: Bitmap.Config? = null
 	}
 }

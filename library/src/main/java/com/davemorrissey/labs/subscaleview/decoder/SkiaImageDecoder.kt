@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.preferredBitmapConfig
 import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
 import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
@@ -18,10 +17,8 @@ import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
  * with grayscale, indexed and CMYK images.
  */
 public class SkiaImageDecoder @JvmOverloads constructor(
-	bitmapConfig: Bitmap.Config? = null,
+	private val bitmapConfig: Bitmap.Config = Bitmap.Config.RGB_565,
 ) : ImageDecoder {
-
-	private val bitmapConfig = bitmapConfig ?: preferredBitmapConfig ?: Bitmap.Config.RGB_565
 
 	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
@@ -33,13 +30,16 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 			uriString.startsWith(RESOURCE_PREFIX) -> {
 				decodeResource(context, uri, options)
 			}
+
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
 				context.assets.decodeBitmap(assetName, options)
 			}
+
 			uriString.startsWith(FILE_PREFIX) -> {
 				BitmapFactory.decodeFile(uriString.substring(FILE_PREFIX.length), options)
 			}
+
 			else -> {
 				context.contentResolver.decodeBitmap(uri, options)
 			}
@@ -47,7 +47,7 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 	}
 
 	public class Factory @JvmOverloads constructor(
-		private val bitmapConfig: Bitmap.Config? = null
+		override val bitmapConfig: Bitmap.Config = Bitmap.Config.RGB_565,
 	) : DecoderFactory<SkiaImageDecoder> {
 
 		override fun make(): SkiaImageDecoder {

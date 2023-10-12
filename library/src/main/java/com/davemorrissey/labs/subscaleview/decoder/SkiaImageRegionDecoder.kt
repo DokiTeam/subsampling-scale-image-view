@@ -7,7 +7,6 @@ import android.graphics.*
 import android.net.Uri
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.preferredBitmapConfig
 import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
@@ -27,13 +26,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  * synchronized internally so this has no real impact on performance.
  */
 public class SkiaImageRegionDecoder @JvmOverloads constructor(
-	bitmapConfig: Bitmap.Config? = null,
+	private val bitmapConfig: Bitmap.Config = Bitmap.Config.RGB_565,
 ) : ImageRegionDecoder {
 
 	private var decoder: BitmapRegionDecoder? = null
 	private val decoderLock: ReadWriteLock = ReentrantReadWriteLock(true)
-
-	private val bitmapConfig = bitmapConfig ?: preferredBitmapConfig ?: Bitmap.Config.RGB_565
 
 	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
@@ -62,13 +59,16 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 				}
 				context.resources.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
+
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
 				context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
 			}
+
 			uriString.startsWith(FILE_PREFIX) -> {
 				BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
 			}
+
 			else -> {
 				val contentResolver = context.contentResolver
 				contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it) }
@@ -119,7 +119,7 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 		get() = decoderLock.readLock()
 
 	public class Factory @JvmOverloads constructor(
-		private val bitmapConfig: Bitmap.Config? = null
+		override val bitmapConfig: Bitmap.Config = Bitmap.Config.RGB_565,
 	) : DecoderFactory<SkiaImageRegionDecoder> {
 
 		override fun make(): SkiaImageRegionDecoder {

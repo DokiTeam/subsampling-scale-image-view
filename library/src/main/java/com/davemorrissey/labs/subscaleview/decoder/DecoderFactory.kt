@@ -1,6 +1,6 @@
 package com.davemorrissey.labs.subscaleview.decoder
 
-import java.lang.reflect.InvocationTargetException
+import android.graphics.Bitmap
 
 /**
  * Interface for [ImageDecoder] and [ImageRegionDecoder] factories.
@@ -8,19 +8,12 @@ import java.lang.reflect.InvocationTargetException
 </T> */
 public fun interface DecoderFactory<T> {
 
+	public val bitmapConfig: Bitmap.Config?
+		get() = null
+
 	/**
 	 * Produce a new instance of a decoder with type [T].
 	 * @return a new instance of your decoder.
-	 * @throws IllegalAccessException if the factory class cannot be instantiated.
-	 * @throws InstantiationException if the factory class cannot be instantiated.
-	 * @throws NoSuchMethodException if the factory class cannot be instantiated.
-	 * @throws InvocationTargetException if the factory class cannot be instantiated.
 	 */
-	@Throws(
-		IllegalAccessException::class,
-		InstantiationException::class,
-		NoSuchMethodException::class,
-		InvocationTargetException::class,
-	)
 	public fun make(): T
 }

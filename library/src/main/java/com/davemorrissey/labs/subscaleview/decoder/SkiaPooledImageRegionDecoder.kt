@@ -9,7 +9,6 @@ import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.Keep
 import androidx.annotation.WorkerThread
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.preferredBitmapConfig
 import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
 import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
@@ -42,7 +41,7 @@ import kotlin.concurrent.thread
  *
  */
 public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
-	bitmapConfig: Bitmap.Config? = null,
+	private val bitmapConfig: Bitmap.Config = Bitmap.Config.RGB_565,
 ) : ImageRegionDecoder {
 
 	private var decoderPool: DecoderPool? = DecoderPool()
@@ -52,8 +51,6 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	private var fileLength = Long.MAX_VALUE
 	private val imageDimensions = Point(0, 0)
 	private val isLazyInited = AtomicBoolean(false)
-
-	private val bitmapConfig = bitmapConfig ?: preferredBitmapConfig ?: Bitmap.Config.RGB_565
 
 	/**
 	 * Initialises the decoder pool. This method creates one decoder on the current thread and uses
@@ -138,6 +135,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				}
 				res.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
+
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
 				try {
@@ -148,6 +146,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				}
 				context!!.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
 			}
+
 			uriString.startsWith(FILE_PREFIX) -> {
 				val d = BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
 				try {
@@ -160,6 +159,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				}
 				d
 			}
+
 			else -> {
 				val contentResolver = context!!.contentResolver
 				val d = contentResolver.openInputStream(uri!!)?.use { BitmapRegionDecoder(it) }
@@ -283,7 +283,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	}
 
 	public class Factory @JvmOverloads constructor(
-		private val bitmapConfig: Bitmap.Config? = null
+		override val bitmapConfig: Bitmap.Config = Bitmap.Config.RGB_565,
 	) : DecoderFactory<SkiaPooledImageRegionDecoder> {
 
 		override fun make(): SkiaPooledImageRegionDecoder {
