@@ -9,6 +9,8 @@ import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
 import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.ZIP_PREFIX
+import java.util.zip.ZipFile
 
 /**
  * Default implementation of [com.davemorrissey.labs.subscaleview.decoder.ImageDecoder]
@@ -34,6 +36,14 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
 				context.assets.decodeBitmap(assetName, options)
+			}
+
+			uriString.startsWith(ZIP_PREFIX) -> {
+				val file = ZipFile(uriString.substring(FILE_PREFIX.length).substringBeforeLast('#'))
+				val entry = file.getEntry(uriString.substringAfterLast('#'))
+				file.use {
+					BitmapFactory.decodeStream(it.getInputStream(entry), null, options)
+				}
 			}
 
 			uriString.startsWith(FILE_PREFIX) -> {

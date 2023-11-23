@@ -10,9 +10,11 @@ import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.ZIP_PREFIX
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.zip.ZipFile
 
 /**
  * Default implementation of [com.davemorrissey.labs.subscaleview.decoder.ImageRegionDecoder]
@@ -63,6 +65,12 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 			uriString.startsWith(ASSET_PREFIX) -> {
 				val assetName = uriString.substring(ASSET_PREFIX.length)
 				context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
+			}
+
+			uriString.startsWith(ZIP_PREFIX) -> {
+				val file = ZipFile(uriString.substring(FILE_PREFIX.length).substringBeforeLast('#'))
+				val entry = file.getEntry(uriString.substringAfterLast('#'))
+				file.use { BitmapRegionDecoder(it.getInputStream(entry)) }
 			}
 
 			uriString.startsWith(FILE_PREFIX) -> {

@@ -1,12 +1,14 @@
 package com.davemorrissey.labs.subscaleview
 
-import android.graphics.Bitmap as AndroidBitmap
 import android.graphics.Rect
-import android.net.Uri as AndroidUri
 import androidx.annotation.DrawableRes
 import androidx.annotation.ReturnThis
 import com.davemorrissey.labs.subscaleview.internal.SCHEME_ASSET
 import com.davemorrissey.labs.subscaleview.internal.SCHEME_FILE
+import com.davemorrissey.labs.subscaleview.internal.SCHEME_ZIP
+import java.io.File
+import android.graphics.Bitmap as AndroidBitmap
+import android.net.Uri as AndroidUri
 
 public sealed class ImageSource(
 	public var isTilingEnabled: Boolean,
@@ -52,6 +54,7 @@ public sealed class ImageSource(
 		return this
 	}
 
+	@Suppress("FunctionName")
 	public companion object {
 
 		@JvmStatic
@@ -67,9 +70,16 @@ public sealed class ImageSource(
 		}
 
 		@JvmStatic
-		@Suppress("FunctionName")
 		public fun Asset(assetName: String): Uri {
 			return Uri(AndroidUri.parse(SCHEME_ASSET + assetName))
 		}
+
+		@JvmStatic
+		public fun File(file: File): Uri = Uri(AndroidUri.fromFile(file))
+
+		@JvmStatic
+		public fun Zip(file: File, entry: String): Uri = Uri(
+			AndroidUri.fromParts(SCHEME_ZIP, file.absolutePath, entry),
+		)
 	}
 }
