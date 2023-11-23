@@ -10,6 +10,14 @@ internal class TileMap : LinkedHashMap<Int, List<Tile>>() {
 		}
 	}
 
+	fun invalidateAll() {
+		for ((_, tiles) in this) {
+			for (tile in tiles) {
+				tile.isValid = false
+			}
+		}
+	}
+
 	fun hasMissingTiles(sampleSize: Int): Boolean {
 		val tiles = this[sampleSize] ?: return true
 		return tiles.any { tile ->

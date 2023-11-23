@@ -92,10 +92,12 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	public var downsampling: Int = 1
 		set(value) {
+			require(downsampling > 0) {
+				"Downsampling value must be positive"
+			}
 			if (field != value) {
 				field = value
-				tileMap?.recycleAll()
-				tileMap = null
+				invalidateTiles()
 				invalidate()
 			}
 		}
@@ -185,7 +187,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 					height / 2f - scale * (sHeight() / 2f),
 				)
 				if (isReady) {
-					refreshRequiredTiles(true)
+					refreshRequiredTiles(load = true)
 					invalidate()
 				}
 			}
@@ -630,7 +632,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				if (key == sampleSize || hasMissingTiles) {
 					for (tile in value) {
 						sourceToViewRect(tile.sRect, tile.vRect)
-						if (!tile.isLoading && tile.bitmap != null) {
+						if (tile.bitmap != null) {
 							tileBgPaint?.let {
 								canvas.drawRect(tile.vRect, it)
 							}
@@ -866,7 +868,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 					loadTile(decoder!!, baseTile)
 				}
 			}
-			refreshRequiredTiles(true)
+			refreshRequiredTiles(load = true)
 		}
 	}
 
@@ -1193,13 +1195,14 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		// resolution than required, or lower res than required but not the base layer, so the base layer is always present.
 		for (value in tiles) {
 			for (tile in value) {
+				val isTileOutdated = !tile.isValid
 				if (tile.sampleSize < sampleSize || tile.sampleSize > sampleSize && tile.sampleSize != fullImageSampleSize) {
 					tile.recycle()
 				}
 				if (tile.sampleSize == sampleSize) {
 					if (tileVisible(tile)) {
 						tile.isVisible = true
-						if (!tile.isLoading && tile.bitmap == null && load) {
+						if (!tile.isLoading && (isTileOutdated || tile.bitmap == null) && load) {
 							loadTile(decoder!!, tile)
 						}
 					} else if (tile.sampleSize != fullImageSampleSize) {
@@ -1210,6 +1213,16 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				}
 			}
 		}
+	}
+
+	private fun invalidateTiles() {
+		tileMap?.invalidateAll()
+		decoder?.let { d ->
+			tileMap?.get(fullImageSampleSize)?.forEach {
+				loadTile(d, it)
+			}
+		}
+		refreshRequiredTiles(load = true)
 	}
 
 	/**
@@ -1505,7 +1518,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			return true
 		} else if (tileMap != null) {
 			tileMap?.get(fullImageSampleSize)?.forEach { tile ->
-				if (tile.isLoading || tile.bitmap == null) {
+				if (tile.bitmap == null) {
 					return false
 				}
 			} ?: return false
@@ -1799,7 +1812,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			sPendingCenter = null
 			pendingScale = null
 			fitToBounds(true)
-			refreshRequiredTiles(true)
+			refreshRequiredTiles(load = true)
 		}
 
 		// On first display of base image set up position, and in other cases make sure scale is correct.
@@ -1849,7 +1862,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		// For translate anims, showing the image non-centered is never allowed, for scaling anims it is during the animation.
 		fitToBounds(finished || animation.scaleStart == animation.scaleEnd)
 		sendStateChanged(scaleBefore, vTranslateBefore!!, animation.origin)
-		refreshRequiredTiles(finished)
+		refreshRequiredTiles(load = finished)
 		if (finished) {
 			try {
 				animation.listener?.onComplete()

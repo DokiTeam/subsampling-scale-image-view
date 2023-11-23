@@ -6,6 +6,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
@@ -28,6 +29,7 @@ public class ImageDisplayLargeFragment extends Fragment {
 			int ds = imageView.getDownsampling();
 			ds = ds == 16 ? 1 : ds * 2;
 			imageView.setDownsampling(ds);
+			((Button)v).setText(String.valueOf(ds));
         });
         return rootView;
     }
