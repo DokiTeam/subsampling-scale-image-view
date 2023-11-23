@@ -27,5 +27,5 @@ public interface ImageDecoder {
 	 */
 	@Throws(Exception::class)
 	@WorkerThread
-	public fun decode(context: Context, uri: Uri): Bitmap
+	public fun decode(context: Context, uri: Uri, sampleSize: Int): Bitmap
 }

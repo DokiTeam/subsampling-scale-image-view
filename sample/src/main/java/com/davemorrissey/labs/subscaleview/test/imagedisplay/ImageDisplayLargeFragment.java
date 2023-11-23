@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
+import com.davemorrissey.labs.subscaleview.test.R;
 import com.davemorrissey.labs.subscaleview.test.R.id;
 import com.davemorrissey.labs.subscaleview.test.R.layout;
 
@@ -23,7 +24,11 @@ public class ImageDisplayLargeFragment extends Fragment {
         }
         SubsamplingScaleImageView imageView = rootView.findViewById(id.imageView);
         imageView.setImage(ImageSource.Asset("card.png"));
+		rootView.findViewById(R.id.downsampling).setOnClickListener(v -> {
+			int ds = imageView.getDownsampling();
+			ds = ds == 16 ? 1 : ds * 2;
+			imageView.setDownsampling(ds);
+        });
         return rootView;
     }
-
 }

@@ -24,10 +24,11 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 
 	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
-	override fun decode(context: Context, uri: Uri): Bitmap {
+	override fun decode(context: Context, uri: Uri, sampleSize: Int): Bitmap {
 		val uriString = uri.toString()
 		val options = BitmapFactory.Options()
 		options.inPreferredConfig = bitmapConfig
+		options.inSampleSize = sampleSize
 		return when {
 			uriString.startsWith(RESOURCE_PREFIX) -> {
 				decodeResource(context, uri, options)

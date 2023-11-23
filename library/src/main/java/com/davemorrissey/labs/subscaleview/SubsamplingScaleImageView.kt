@@ -90,6 +90,16 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	// Map of zoom level to tile grid
 	private var tileMap: TileMap? = null
 
+	public var downsampling: Int = 1
+		set(value) {
+			if (field != value) {
+				field = value
+				tileMap?.recycleAll()
+				tileMap = null
+				invalidate()
+			}
+		}
+
 	// Image orientation setting
 	public var orientation: Int = ORIENTATION_0
 		set(value) {
@@ -1332,7 +1342,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				debug("BitmapLoadTask.doInBackground")
 				val bitmap = async {
 					runInterruptible(backgroundDispatcher) {
-						bitmapDecoderFactory.make().decode(context, source)
+						bitmapDecoderFactory.make().decode(context, source, downsampling)
 					}
 				}
 				val orientation = async {
@@ -1410,7 +1420,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 								if (sRegion != null) {
 									tile.fileSRect.offset(sRegion!!.left, sRegion!!.top)
 								}
-								decoder.decodeRegion(tile.fileSRect, tile.sampleSize)
+								decoder.decodeRegion(tile.fileSRect, tile.sampleSize * downsampling)
 							} else {
 								tile.isLoading = false
 								null

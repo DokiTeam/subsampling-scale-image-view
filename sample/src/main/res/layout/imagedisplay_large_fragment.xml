@@ -16,4 +16,12 @@
 
     <com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView style="@style/mainPanel" android:id="@+id/imageView"/>
 
+	<Button
+		android:id="@+id/downsampling"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="DS"
+		android:layout_alignParentEnd="true"
+		android:layout_alignParentBottom="true" />
+
 </RelativeLayout>
