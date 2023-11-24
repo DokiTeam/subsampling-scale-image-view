@@ -1221,6 +1221,8 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			tileMap?.get(fullImageSampleSize)?.forEach {
 				loadTile(d, it)
 			}
+		} ?: uri?.let {
+			loadBitmap(it, preview = false)
 		}
 		refreshRequiredTiles(load = true)
 	}
