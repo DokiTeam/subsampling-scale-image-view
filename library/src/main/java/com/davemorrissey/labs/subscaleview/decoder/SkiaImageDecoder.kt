@@ -25,7 +25,7 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
 	override fun decode(context: Context, uri: Uri, sampleSize: Int): Bitmap {
-		val uriString = uri.toString()
+		val uriString = uri.toString().fixUriPrefix()
 		val options = BitmapFactory.Options()
 		options.inPreferredConfig = bitmapConfig
 		options.inSampleSize = sampleSize
@@ -40,7 +40,7 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 			}
 
 			uriString.startsWith(ZIP_PREFIX) -> {
-				val file = ZipFile(uriString.substring(FILE_PREFIX.length).substringBeforeLast('#'))
+				val file = ZipFile(uriString.substring(ZIP_PREFIX.length).substringBeforeLast('#'))
 				val entry = file.getEntry(uriString.substringAfterLast('#'))
 				file.use {
 					BitmapFactory.decodeStream(it.getInputStream(entry), null, options)

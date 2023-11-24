@@ -38,7 +38,7 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 	@Throws(Exception::class)
 	@WorkerThread
 	override fun init(context: Context, uri: Uri): Point {
-		val uriString = uri.toString()
+		val uriString = uri.toString().fixUriPrefix()
 		decoder = when {
 			uriString.startsWith(RESOURCE_PREFIX) -> {
 				val packageName = uri.authority
@@ -68,7 +68,7 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 			}
 
 			uriString.startsWith(ZIP_PREFIX) -> {
-				val file = ZipFile(uriString.substring(FILE_PREFIX.length).substringBeforeLast('#'))
+				val file = ZipFile(uriString.substring(ZIP_PREFIX.length).substringBeforeLast('#'))
 				val entry = file.getEntry(uriString.substringAfterLast('#'))
 				file.use { BitmapRegionDecoder(it.getInputStream(entry)) }
 			}

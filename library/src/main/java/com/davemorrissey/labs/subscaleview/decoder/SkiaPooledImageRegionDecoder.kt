@@ -107,7 +107,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	@Throws(Exception::class)
 	@WorkerThread
 	private fun initialiseDecoder() {
-		val uriString = uri.toString()
+		val uriString = uri.toString().fixUriPrefix()
 		var fileLength = Long.MAX_VALUE
 		val decoder: BitmapRegionDecoder? = when {
 			uriString.startsWith(RESOURCE_PREFIX) -> {
@@ -150,7 +150,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 			}
 
 			uriString.startsWith(ZIP_PREFIX) -> {
-				val file = ZipFile(uriString.substring(FILE_PREFIX.length).substringBeforeLast('#'))
+				val file = ZipFile(uriString.substring(ZIP_PREFIX.length).substringBeforeLast('#'))
 				val entry = file.getEntry(uriString.substringAfterLast('#'))
 				file.use { BitmapRegionDecoder(it.getInputStream(entry)) }
 			}

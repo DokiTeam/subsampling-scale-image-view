@@ -86,3 +86,8 @@ internal fun ensureNotInterrupted() {
 		throw InterruptedException()
 	}
 }
+
+internal fun String.fixUriPrefix(): String = replace(
+	regex = Regex(":(%2F)+", RegexOption.IGNORE_CASE),
+	replacement = ":///",
+)
