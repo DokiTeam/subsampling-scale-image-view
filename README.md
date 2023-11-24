@@ -6,10 +6,12 @@ Subsampling Scale Image View (Kotatsu fork)
 # Differences from [upstream](https://github.com/davemorrissey/subsampling-scale-image-view)
 
 - Fully rewriten in Kotlin and using Coroutines for image loading (using from Java code is supported as well)
+- Loading images from zip files (`ImageSource.Zip`)
 - Support for ColorFilter
 - Automatically stores and restores state (zoom and center)
-- Using Interpolator for animation
+- Supports Interpolator for animation
 - Handle mouse and keyboard/dpad events for scaling and panning
+- Supports downsampling
 
 ---
 ### Usage
