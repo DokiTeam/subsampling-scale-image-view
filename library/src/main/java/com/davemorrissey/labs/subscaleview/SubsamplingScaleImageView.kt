@@ -1353,7 +1353,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun loadBitmap(source: Uri, preview: Boolean) {
 		coroutineScope.launch {
 			try {
-				val sourceUri = source.toString()
 				debug("BitmapLoadTask.doInBackground")
 				val bitmap = async {
 					runInterruptible(backgroundDispatcher) {
@@ -1362,7 +1361,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				}
 				val orientation = async {
 					runInterruptible(backgroundDispatcher) {
-						getExifOrientation(context, sourceUri)
+						getExifOrientation(context, source)
 					}
 				}
 				if (preview) {
@@ -1386,10 +1385,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun initTiles(decoderFactory: DecoderFactory<out ImageRegionDecoder>, source: Uri) {
 		coroutineScope.launch {
 			try {
-				val sourceUri = source.toString()
 				val exifOrientation = async {
 					runInterruptible(backgroundDispatcher) {
-						getExifOrientation(context, sourceUri)
+						getExifOrientation(context, source)
 					}
 				}
 				val (w, h) = runInterruptible(backgroundDispatcher) {

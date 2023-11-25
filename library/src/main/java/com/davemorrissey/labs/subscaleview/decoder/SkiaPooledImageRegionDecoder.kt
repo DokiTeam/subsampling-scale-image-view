@@ -9,11 +9,11 @@ import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.Keep
 import androidx.annotation.WorkerThread
-import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
-import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
-import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
-import com.davemorrissey.labs.subscaleview.internal.ZIP_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReadWriteLock
@@ -107,18 +107,18 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	@Throws(Exception::class)
 	@WorkerThread
 	private fun initialiseDecoder() {
-		val uriString = uri.toString().fixUriPrefix()
+		val uri = checkNotNull(uri)
 		var fileLength = Long.MAX_VALUE
-		val decoder: BitmapRegionDecoder? = when {
-			uriString.startsWith(RESOURCE_PREFIX) -> {
-				val packageName = uri!!.authority
+		val decoder: BitmapRegionDecoder? = when (uri.scheme) {
+			URI_SCHEME_RES -> {
+				val packageName = uri.authority
 				val res = if (packageName == null || context!!.packageName == packageName) {
 					context!!.resources
 				} else {
 					context!!.packageManager.getResourcesForApplication(packageName)
 				}
 				var id = 0
-				val segments = uri!!.pathSegments
+				val segments = uri.pathSegments
 				val size = segments.size
 				if (size == 2 && segments[0] == "drawable") {
 					val resName = segments[1]
@@ -138,41 +138,42 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				res.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
 
-			uriString.startsWith(ASSET_PREFIX) -> {
-				val assetName = uriString.substring(ASSET_PREFIX.length)
-				try {
-					val descriptor = context!!.assets.openFd(assetName)
-					fileLength = descriptor.length
-				} catch (e: Exception) {
-					// Pooling disabled
-				}
-				context!!.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
-			}
-
-			uriString.startsWith(ZIP_PREFIX) -> {
-				val file = ZipFile(uriString.substring(ZIP_PREFIX.length).substringBeforeLast('#'))
-				val entry = file.getEntry(uriString.substringAfterLast('#'))
+			URI_SCHEME_ZIP -> {
+				val file = ZipFile(uri.schemeSpecificPart)
+				val entry = file.getEntry(uri.fragment)
 				file.use { BitmapRegionDecoder(it.getInputStream(entry)) }
 			}
 
-			uriString.startsWith(FILE_PREFIX) -> {
-				val d = BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
-				try {
-					val file = File(uriString)
-					if (file.exists()) {
-						fileLength = file.length()
+			URI_SCHEME_FILE -> {
+				val path = uri.schemeSpecificPart
+				if (path.startsWith(URI_PATH_ASSET, ignoreCase = true)) {
+					val assetName = path.substring(URI_PATH_ASSET.length)
+					try {
+						val descriptor = context!!.assets.openFd(assetName)
+						fileLength = descriptor.length
+					} catch (e: Exception) {
+						// Pooling disabled
 					}
-				} catch (e: Exception) {
-					// Pooling disabled
+					context!!.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
+				} else {
+					val d = BitmapRegionDecoder(path)
+					try {
+						val file = File(path)
+						if (file.exists()) {
+							fileLength = file.length()
+						}
+					} catch (e: Exception) {
+						// Pooling disabled
+					}
+					d
 				}
-				d
 			}
 
 			else -> {
 				val contentResolver = context!!.contentResolver
-				val d = contentResolver.openInputStream(uri!!)?.use { BitmapRegionDecoder(it) }
+				val d = contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it) }
 				try {
-					contentResolver.openAssetFileDescriptor(uri!!, "r")?.use { descriptor ->
+					contentResolver.openAssetFileDescriptor(uri, "r")?.use { descriptor ->
 						fileLength = descriptor.length
 					}
 				} catch (e: Exception) {

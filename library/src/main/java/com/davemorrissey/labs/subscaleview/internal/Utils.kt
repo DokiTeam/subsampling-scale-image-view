@@ -1,16 +1,16 @@
 package com.davemorrissey.labs.subscaleview.internal
 
-import android.content.ContentResolver
 import android.content.Context
-import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import android.view.animation.DecelerateInterpolator
+import androidx.annotation.CheckResult
 import androidx.annotation.WorkerThread
 import androidx.exifinterface.media.ExifInterface
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.VALID_ORIENTATIONS
+import java.util.zip.ZipFile
 import kotlin.math.hypot
 
 /**
@@ -45,46 +45,59 @@ internal fun distance(x0: Float, x1: Float, y0: Float, y1: Float): Float {
 }
 
 @WorkerThread
-internal fun getExifOrientation(context: Context, sourceUri: String): Int {
+internal fun getExifOrientation(context: Context, sourceUri: Uri): Int = runCatching {
 	var exifOrientation = SubsamplingScaleImageView.ORIENTATION_0
-	if (sourceUri.startsWith(ContentResolver.SCHEME_CONTENT)) {
-		var cursor: Cursor? = null
-		try {
+	when (sourceUri.scheme) {
+		URI_SCHEME_CONTENT -> {
 			val columns = arrayOf(MediaStore.Images.Media.ORIENTATION)
-			cursor = context.contentResolver.query(Uri.parse(sourceUri), columns, null, null, null)
-			if (cursor != null && cursor.moveToFirst()) {
-				val orientation = cursor.getInt(0)
-				if (orientation in VALID_ORIENTATIONS && orientation != SubsamplingScaleImageView.ORIENTATION_USE_EXIF) {
-					exifOrientation = orientation
-				} else {
-					Log.w(SubsamplingScaleImageView.TAG, "Unsupported orientation: $orientation")
+			context.contentResolver.query(sourceUri, columns, null, null, null)?.use { cursor ->
+				if (cursor.moveToFirst()) {
+					val orientation = cursor.getInt(0)
+					if (orientation in VALID_ORIENTATIONS && orientation != SubsamplingScaleImageView.ORIENTATION_USE_EXIF) {
+						exifOrientation = orientation
+					} else {
+						Log.w(SubsamplingScaleImageView.TAG, "Unsupported orientation: $orientation")
+					}
 				}
 			}
-		} catch (e: Exception) {
-			Log.w(SubsamplingScaleImageView.TAG, "Could not get orientation of image from media store")
-		} finally {
-			cursor?.close()
 		}
-	} else if (sourceUri.startsWith(SCHEME_FILE) && !sourceUri.startsWith(SCHEME_ASSET)) {
-		try {
-			val exifInterface = ExifInterface(sourceUri.substring(SCHEME_FILE.length - 1))
-			when (
-				val orientationAttr =
-					exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-			) {
-				ExifInterface.ORIENTATION_NORMAL, ExifInterface.ORIENTATION_UNDEFINED ->
-					exifOrientation = SubsamplingScaleImageView.ORIENTATION_0
 
-				ExifInterface.ORIENTATION_ROTATE_90 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_90
-				ExifInterface.ORIENTATION_ROTATE_180 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_180
-				ExifInterface.ORIENTATION_ROTATE_270 -> exifOrientation = SubsamplingScaleImageView.ORIENTATION_270
-				else -> Log.w(SubsamplingScaleImageView.TAG, "Unsupported EXIF orientation: $orientationAttr")
+		URI_SCHEME_FILE -> {
+			val path = sourceUri.schemeSpecificPart
+			if (path.startsWith(URI_PATH_ASSET)) {
+				context.assets.openFd(path.substring(URI_PATH_ASSET.length)).use {
+					exifOrientation = ExifInterface(it.fileDescriptor).getSsivOrientation(exifOrientation)
+				}
+			} else {
+				exifOrientation = ExifInterface(sourceUri.schemeSpecificPart).getSsivOrientation(exifOrientation)
 			}
-		} catch (e: Exception) {
-			Log.w(SubsamplingScaleImageView.TAG, "Could not get EXIF orientation of image")
+		}
+
+		URI_SCHEME_ZIP -> {
+			ZipFile(sourceUri.schemeSpecificPart).use { file ->
+				val entry = file.getEntry(sourceUri.fragment)
+				exifOrientation = ExifInterface(file.getInputStream(entry)).getSsivOrientation(exifOrientation)
+			}
 		}
 	}
-	return exifOrientation
+	exifOrientation
+}.onFailure { e ->
+	Log.w(SubsamplingScaleImageView.TAG, "Could not get EXIF orientation of image: $e")
+}.getOrDefault(SubsamplingScaleImageView.ORIENTATION_0)
+
+@CheckResult
+private fun ExifInterface.getSsivOrientation(fallback: Int) = when (
+	val exifAttr = getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+) {
+	ExifInterface.ORIENTATION_NORMAL, ExifInterface.ORIENTATION_UNDEFINED -> SubsamplingScaleImageView.ORIENTATION_0
+
+	ExifInterface.ORIENTATION_ROTATE_90 -> SubsamplingScaleImageView.ORIENTATION_90
+	ExifInterface.ORIENTATION_ROTATE_180 -> SubsamplingScaleImageView.ORIENTATION_180
+	ExifInterface.ORIENTATION_ROTATE_270 -> SubsamplingScaleImageView.ORIENTATION_270
+	else -> {
+		Log.w(SubsamplingScaleImageView.TAG, "Unsupported EXIF orientation: $exifAttr")
+		fallback
+	}
 }
 
 internal fun SubsamplingScaleImageView.scaleBy(factor: Float): Boolean {

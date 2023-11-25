@@ -7,10 +7,10 @@ import android.graphics.*
 import android.net.Uri
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
-import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
-import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
-import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
-import com.davemorrissey.labs.subscaleview.internal.ZIP_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -38,9 +38,8 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 	@Throws(Exception::class)
 	@WorkerThread
 	override fun init(context: Context, uri: Uri): Point {
-		val uriString = uri.toString().fixUriPrefix()
-		decoder = when {
-			uriString.startsWith(RESOURCE_PREFIX) -> {
+		decoder = when (uri.scheme) {
+			URI_SCHEME_RES -> {
 				val packageName = uri.authority
 				val res = if (packageName == null || context.packageName == packageName) {
 					context.resources
@@ -62,19 +61,20 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 				context.resources.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
 
-			uriString.startsWith(ASSET_PREFIX) -> {
-				val assetName = uriString.substring(ASSET_PREFIX.length)
-				context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
-			}
-
-			uriString.startsWith(ZIP_PREFIX) -> {
-				val file = ZipFile(uriString.substring(ZIP_PREFIX.length).substringBeforeLast('#'))
-				val entry = file.getEntry(uriString.substringAfterLast('#'))
+			URI_SCHEME_ZIP -> {
+				val file = ZipFile(uri.schemeSpecificPart)
+				val entry = file.getEntry(uri.fragment)
 				file.use { BitmapRegionDecoder(it.getInputStream(entry)) }
 			}
 
-			uriString.startsWith(FILE_PREFIX) -> {
-				BitmapRegionDecoder(uriString.substring(FILE_PREFIX.length))
+			URI_SCHEME_FILE -> {
+				val path = uri.schemeSpecificPart
+				if (path.startsWith(URI_PATH_ASSET, ignoreCase = true)) {
+					val assetName = path.substring(URI_PATH_ASSET.length)
+					context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
+				} else {
+					BitmapRegionDecoder(path)
+				}
 			}
 
 			else -> {

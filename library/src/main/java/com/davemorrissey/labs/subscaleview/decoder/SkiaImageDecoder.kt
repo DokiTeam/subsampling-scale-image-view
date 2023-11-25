@@ -5,11 +5,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import com.davemorrissey.labs.subscaleview.internal.ASSET_PREFIX
 import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
-import com.davemorrissey.labs.subscaleview.internal.FILE_PREFIX
-import com.davemorrissey.labs.subscaleview.internal.RESOURCE_PREFIX
-import com.davemorrissey.labs.subscaleview.internal.ZIP_PREFIX
+import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
 import java.util.zip.ZipFile
 
 /**
@@ -25,30 +25,30 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 	@SuppressLint("DiscouragedApi")
 	@Throws(Exception::class)
 	override fun decode(context: Context, uri: Uri, sampleSize: Int): Bitmap {
-		val uriString = uri.toString().fixUriPrefix()
 		val options = BitmapFactory.Options()
 		options.inPreferredConfig = bitmapConfig
 		options.inSampleSize = sampleSize
-		return when {
-			uriString.startsWith(RESOURCE_PREFIX) -> {
+		return when (uri.scheme) {
+			URI_SCHEME_RES -> {
 				decodeResource(context, uri, options)
 			}
 
-			uriString.startsWith(ASSET_PREFIX) -> {
-				val assetName = uriString.substring(ASSET_PREFIX.length)
-				context.assets.decodeBitmap(assetName, options)
-			}
-
-			uriString.startsWith(ZIP_PREFIX) -> {
-				val file = ZipFile(uriString.substring(ZIP_PREFIX.length).substringBeforeLast('#'))
-				val entry = file.getEntry(uriString.substringAfterLast('#'))
+			URI_SCHEME_ZIP -> {
+				val file = ZipFile(uri.schemeSpecificPart)
+				val entry = file.getEntry(uri.fragment)
 				file.use {
 					BitmapFactory.decodeStream(it.getInputStream(entry), null, options)
 				}
 			}
 
-			uriString.startsWith(FILE_PREFIX) -> {
-				BitmapFactory.decodeFile(uriString.substring(FILE_PREFIX.length), options)
+			URI_SCHEME_FILE -> {
+				val path = uri.schemeSpecificPart
+				if (path.startsWith(URI_PATH_ASSET, ignoreCase = true)) {
+					val assetName = path.substring(URI_PATH_ASSET.length)
+					context.assets.decodeBitmap(assetName, options)
+				} else {
+					BitmapFactory.decodeFile(path, options)
+				}
 			}
 
 			else -> {
