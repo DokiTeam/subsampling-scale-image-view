@@ -731,6 +731,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			if (bitmapIsPreview) {
 				xScale = scale * (sWidth.toFloat() / bitmap!!.width)
 				yScale = scale * (sHeight.toFloat() / bitmap!!.height)
+			} else if (downsampling != 1) {
+				xScale *= downsampling
+				yScale *= downsampling
 			}
 			if (matrix2 == null) {
 				matrix2 = Matrix()
@@ -1550,7 +1553,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun onImageLoaded(bitmap: Bitmap, sOrientation: Int, bitmapIsCached: Boolean) {
 		debug("onImageLoaded")
 		// If actual dimensions don't match the declared size, reset everything.
-		if (sWidth > 0 && sHeight > 0 && (sWidth != bitmap.width || sHeight != bitmap.height)) {
+		if (sWidth > 0 && sHeight > 0 && (sWidth != bitmap.fullWidth() || sHeight != bitmap.fullHeight())) {
 			reset(false)
 		}
 		if (this.bitmap != null && !this.bitmapIsCached) {
@@ -1562,8 +1565,8 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		bitmapIsPreview = false
 		this.bitmapIsCached = bitmapIsCached
 		this.bitmap = bitmap
-		sWidth = bitmap.width
-		sHeight = bitmap.height
+		sWidth = bitmap.fullWidth()
+		sHeight = bitmap.fullHeight()
 		this.sOrientation = sOrientation
 		val ready = checkReady()
 		val imageLoaded = checkImageLoaded()
@@ -2046,6 +2049,10 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	}
 
 	private fun isScaled() = scale > minScale
+
+	private fun Bitmap.fullWidth() = width * downsampling
+
+	private fun Bitmap.fullHeight() = height * downsampling
 
 	/**
 	 * Called once when the view is initialised, has dimensions, and will display an image on the
