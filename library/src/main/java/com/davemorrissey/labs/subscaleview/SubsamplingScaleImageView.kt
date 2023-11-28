@@ -98,7 +98,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			if (field != value) {
 				field = value
 				invalidateTiles()
-				invalidate()
+				onDownsamplingChanged()
 			}
 		}
 
@@ -1228,6 +1228,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			loadBitmap(it, preview = false)
 		}
 		refreshRequiredTiles(load = true)
+		invalidate()
 	}
 
 	/**
@@ -2061,6 +2062,8 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * allows a subclass to receive this event without using a listener.
 	 */
 	protected open fun onReady(): Unit = Unit
+
+	protected open fun onDownsamplingChanged(): Unit = Unit
 
 	/**
 	 * Called once when the full size image or its base layer tiles have been loaded.
