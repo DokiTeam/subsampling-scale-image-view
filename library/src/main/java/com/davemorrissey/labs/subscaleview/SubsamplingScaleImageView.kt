@@ -90,10 +90,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	// Map of zoom level to tile grid
 	private var tileMap: TileMap? = null
 
-	public var downsampling: Int = 1
+	private var _downsampling = 1
+	public var downsampling: Int = _downsampling
 		set(value) {
-			require(downsampling > 0) {
-				"Downsampling value must be positive"
+			require(value > 0 && value.countOneBits() == 1) {
+				"Downsampling value must be a positive power of 2"
 			}
 			if (field != value) {
 				field = value
@@ -360,6 +361,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		setMinimumTileDpi(320)
 		setGestureDetector(context)
 		val ta = context.obtainStyledAttributes(attrs, R.styleable.SubsamplingScaleImageView, defStyleAttr, 0)
+		downsampling = ta.getInt(R.styleable.SubsamplingScaleImageView_downsampling, downsampling)
 		isPanEnabled = ta.getBoolean(R.styleable.SubsamplingScaleImageView_panEnabled, isPanEnabled)
 		isZoomEnabled = ta.getBoolean(R.styleable.SubsamplingScaleImageView_zoomEnabled, isZoomEnabled)
 		isQuickScaleEnabled =
@@ -731,9 +733,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			if (bitmapIsPreview) {
 				xScale = scale * (sWidth.toFloat() / bitmap!!.width)
 				yScale = scale * (sHeight.toFloat() / bitmap!!.height)
-			} else if (downsampling != 1) {
-				xScale *= downsampling
-				yScale *= downsampling
+			} else if (_downsampling != 1) {
+				xScale *= _downsampling
+				yScale *= _downsampling
 			}
 			if (matrix2 == null) {
 				matrix2 = Matrix()
@@ -1221,14 +1223,13 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun invalidateTiles() {
 		tileMap?.invalidateAll()
 		decoder?.let { d ->
-			tileMap?.get(fullImageSampleSize)?.forEach {
-				loadTile(d, it)
-			}
+			_downsampling = downsampling
+			refreshRequiredTiles(load = true)
 		} ?: uri?.let {
 			loadBitmap(it, preview = false)
+		} ?: run {
+			_downsampling = downsampling
 		}
-		refreshRequiredTiles(load = true)
-		invalidate()
 	}
 
 	/**
@@ -1434,8 +1435,8 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 							if (decoder.isReady) {
 								// Update tile's file sRect according to rotation
 								fileSRect(tile.sRect, tile.fileSRect)
-								if (sRegion != null) {
-									tile.fileSRect.offset(sRegion!!.left, sRegion!!.top)
+								sRegion?.let {
+									tile.fileSRect.offset(it.left, it.top)
 								}
 								decoder.decodeRegion(tile.fileSRect, tile.sampleSize * downsampling)
 							} else {
@@ -1554,18 +1555,20 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun onImageLoaded(bitmap: Bitmap, sOrientation: Int, bitmapIsCached: Boolean) {
 		debug("onImageLoaded")
 		// If actual dimensions don't match the declared size, reset everything.
-		if (sWidth > 0 && sHeight > 0 && (sWidth != bitmap.fullWidth() || sHeight != bitmap.fullHeight())) {
+		if (sWidth > 0 && sHeight > 0 && (sWidth != bitmap.width * downsampling || sHeight != bitmap.height * downsampling)) {
 			reset(false)
 		}
-		if (this.bitmap != null && !this.bitmapIsCached) {
-			this.bitmap!!.recycle()
-		}
-		if (this.bitmap != null && this.bitmapIsCached) {
-			onImageEventListeners.onPreviewReleased()
+		this.bitmap?.let { oldBitmap ->
+			if (this.bitmapIsCached) {
+				onImageEventListeners.onPreviewReleased()
+			} else {
+				oldBitmap.recycle()
+			}
 		}
 		bitmapIsPreview = false
 		this.bitmapIsCached = bitmapIsCached
 		this.bitmap = bitmap
+		_downsampling = downsampling
 		sWidth = bitmap.fullWidth()
 		sHeight = bitmap.fullHeight()
 		this.sOrientation = sOrientation
@@ -1704,11 +1707,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	@JvmSynthetic
 	internal fun doubleTapZoom(sCenter: PointF, vFocus: PointF) {
 		if (!isPanEnabled) {
-			if (sRequestedCenter != null) {
+			sRequestedCenter?.let {
 				// With a center specified from code, zoom around that point.
-				sCenter.x = sRequestedCenter!!.x
-				sCenter.y = sRequestedCenter!!.y
-			} else {
+				sCenter.x = it.x
+				sCenter.y = it.y
+			} ?: run {
 				// With no requested center, scale around the image center.
 				sCenter.x = sWidth() / 2f
 				sCenter.y = sHeight() / 2f
@@ -2051,9 +2054,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	private fun isScaled() = scale > minScale
 
-	private fun Bitmap.fullWidth() = width * downsampling
+	private fun Bitmap.fullWidth() = width * _downsampling
 
-	private fun Bitmap.fullHeight() = height * downsampling
+	private fun Bitmap.fullHeight() = height * _downsampling
 
 	/**
 	 * Called once when the view is initialised, has dimensions, and will display an image on the
