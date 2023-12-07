@@ -99,7 +99,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			if (field != value) {
 				field = value
 				invalidateTiles()
-				onDownsamplingChanged()
 			}
 		}
 
@@ -1225,10 +1224,12 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		decoder?.let { d ->
 			_downsampling = downsampling
 			refreshRequiredTiles(load = true)
+			onDownsamplingChanged()
 		} ?: uri?.let {
 			loadBitmap(it, preview = false)
 		} ?: run {
 			_downsampling = downsampling
+			onDownsamplingChanged()
 		}
 	}
 
@@ -1568,10 +1569,14 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		bitmapIsPreview = false
 		this.bitmapIsCached = bitmapIsCached
 		this.bitmap = bitmap
+		val isDownsamplingChanged = _downsampling != downsampling
 		_downsampling = downsampling
 		sWidth = bitmap.fullWidth()
 		sHeight = bitmap.fullHeight()
 		this.sOrientation = sOrientation
+		if (isDownsamplingChanged) {
+			onDownsamplingChanged()
+		}
 		val ready = checkReady()
 		val imageLoaded = checkImageLoaded()
 		if (ready || imageLoaded) {
