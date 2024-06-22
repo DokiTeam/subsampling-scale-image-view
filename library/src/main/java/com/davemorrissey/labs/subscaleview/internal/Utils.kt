@@ -1,6 +1,7 @@
 package com.davemorrissey.labs.subscaleview.internal
 
 import android.content.Context
+import android.graphics.PointF
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
@@ -119,3 +120,5 @@ internal fun SubsamplingScaleImageView.panBy(dx: Float, dy: Float): Boolean {
 		start()
 	} != null
 }
+
+internal fun PointF.copy() = PointF(x, y)

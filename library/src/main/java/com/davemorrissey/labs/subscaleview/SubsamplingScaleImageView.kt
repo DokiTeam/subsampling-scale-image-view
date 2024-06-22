@@ -90,8 +90,8 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	// Map of zoom level to tile grid
 	private var tileMap: TileMap? = null
 
-	private var _downsampling = 1
-	public var downsampling: Int = _downsampling
+	private var _downSampling = 1
+	public var downSampling: Int = _downSampling
 		set(value) {
 			require(value > 0 && value.countOneBits() == 1) {
 				"Downsampling value must be a positive power of 2"
@@ -360,11 +360,13 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		setMinimumTileDpi(320)
 		setGestureDetector(context)
 		val ta = context.obtainStyledAttributes(attrs, R.styleable.SubsamplingScaleImageView, defStyleAttr, 0)
-		downsampling = ta.getInt(R.styleable.SubsamplingScaleImageView_downsampling, downsampling)
+		downSampling = ta.getInt(R.styleable.SubsamplingScaleImageView_downSampling, downSampling)
 		isPanEnabled = ta.getBoolean(R.styleable.SubsamplingScaleImageView_panEnabled, isPanEnabled)
 		isZoomEnabled = ta.getBoolean(R.styleable.SubsamplingScaleImageView_zoomEnabled, isZoomEnabled)
+		doubleTapZoomStyle = ta.getInt(R.styleable.SubsamplingScaleImageView_doubleTapZoomStyle, doubleTapZoomStyle)
 		isQuickScaleEnabled =
 			ta.getBoolean(R.styleable.SubsamplingScaleImageView_quickScaleEnabled, isQuickScaleEnabled)
+		panLimit = ta.getInt(R.styleable.SubsamplingScaleImageView_panLimit, panLimit)
 		stateRestoreStrategy = ta.getInt(R.styleable.SubsamplingScaleImageView_restoreStrategy, stateRestoreStrategy)
 		tileBackgroundColor = ta.getColor(
 			R.styleable.SubsamplingScaleImageView_tileBackgroundColor,
@@ -732,9 +734,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			if (bitmapIsPreview) {
 				xScale = scale * (sWidth.toFloat() / bitmap!!.width)
 				yScale = scale * (sHeight.toFloat() / bitmap!!.height)
-			} else if (_downsampling != 1) {
-				xScale *= _downsampling
-				yScale *= _downsampling
+			} else if (_downSampling != 1) {
+				xScale *= _downSampling
+				yScale *= _downSampling
 			}
 			if (matrix2 == null) {
 				matrix2 = Matrix()
@@ -1222,14 +1224,14 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun invalidateTiles() {
 		tileMap?.invalidateAll()
 		decoder?.let { d ->
-			_downsampling = downsampling
+			_downSampling = downSampling
 			refreshRequiredTiles(load = true)
-			onDownsamplingChanged()
+			onDownSamplingChanged()
 		} ?: uri?.let {
 			loadBitmap(it, preview = false)
 		} ?: run {
-			_downsampling = downsampling
-			onDownsamplingChanged()
+			_downSampling = downSampling
+			onDownSamplingChanged()
 		}
 	}
 
@@ -1362,7 +1364,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				debug("BitmapLoadTask.doInBackground")
 				val bitmap = async {
 					runInterruptible(backgroundDispatcher) {
-						bitmapDecoderFactory.make().decode(context, source, downsampling)
+						bitmapDecoderFactory.make().decode(context, source, downSampling)
 					}
 				}
 				val orientation = async {
@@ -1439,7 +1441,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 								sRegion?.let {
 									tile.fileSRect.offset(it.left, it.top)
 								}
-								decoder.decodeRegion(tile.fileSRect, tile.sampleSize * downsampling)
+								decoder.decodeRegion(tile.fileSRect, tile.sampleSize * downSampling)
 							} else {
 								tile.isLoading = false
 								null
@@ -1556,7 +1558,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun onImageLoaded(bitmap: Bitmap, sOrientation: Int, bitmapIsCached: Boolean) {
 		debug("onImageLoaded")
 		// If actual dimensions don't match the declared size, reset everything.
-		if (sWidth > 0 && sHeight > 0 && (sWidth != bitmap.width * downsampling || sHeight != bitmap.height * downsampling)) {
+		if (sWidth > 0 && sHeight > 0 && (sWidth != bitmap.width * downSampling || sHeight != bitmap.height * downSampling)) {
 			reset(false)
 		}
 		this.bitmap?.let { oldBitmap ->
@@ -1569,13 +1571,13 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		bitmapIsPreview = false
 		this.bitmapIsCached = bitmapIsCached
 		this.bitmap = bitmap
-		val isDownsamplingChanged = _downsampling != downsampling
-		_downsampling = downsampling
+		val isDownsamplingChanged = _downSampling != downSampling
+		_downSampling = downSampling
 		sWidth = bitmap.fullWidth()
 		sHeight = bitmap.fullHeight()
 		this.sOrientation = sOrientation
 		if (isDownsamplingChanged) {
-			onDownsamplingChanged()
+			onDownSamplingChanged()
 		}
 		val ready = checkReady()
 		val imageLoaded = checkImageLoaded()
@@ -1767,14 +1769,13 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * pan limits, keeping the requested center as near to the middle of the screen as allowed.
 	 */
 	@JvmSynthetic
-	internal fun limitedSCenter(sCenterX: Float, sCenterY: Float, scale: Float, sTarget: PointF): PointF {
+	internal fun limitedSCenter(sCenterX: Float, sCenterY: Float, scale: Float, sTarget: PointF) = sTarget.also { target ->
 		val vTranslate: PointF = vTranslateForSCenter(sCenterX, sCenterY, scale)
 		val vxCenter = paddingLeft + (width - paddingRight - paddingLeft) / 2
 		val vyCenter = paddingTop + (height - paddingBottom - paddingTop) / 2
 		val sx = (vxCenter - vTranslate.x) / scale
 		val sy = (vyCenter - vTranslate.y) / scale
-		sTarget[sx] = sy
-		return sTarget
+		target.set(sx, sy)
 	}
 
 	/**
@@ -2059,9 +2060,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	private fun isScaled() = scale > minScale
 
-	private fun Bitmap.fullWidth() = width * _downsampling
+	private fun Bitmap.fullWidth() = width * _downSampling
 
-	private fun Bitmap.fullHeight() = height * _downsampling
+	private fun Bitmap.fullHeight() = height * _downSampling
 
 	/**
 	 * Called once when the view is initialised, has dimensions, and will display an image on the
@@ -2071,7 +2072,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	protected open fun onReady(): Unit = Unit
 
-	protected open fun onDownsamplingChanged(): Unit = Unit
+	protected open fun onDownSamplingChanged(): Unit = Unit
 
 	/**
 	 * Called once when the full size image or its base layer tiles have been loaded.

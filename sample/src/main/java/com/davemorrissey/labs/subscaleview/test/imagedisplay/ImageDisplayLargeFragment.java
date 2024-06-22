@@ -28,9 +28,9 @@ public class ImageDisplayLargeFragment extends Fragment {
 		SubsamplingScaleImageView imageView = rootView.findViewById(id.imageView);
 		imageView.setImage(ImageSource.Asset("card.png"));
 		rootView.findViewById(R.id.downsampling).setOnClickListener(v -> {
-			int ds = imageView.getDownsampling();
+			int ds = imageView.getDownSampling();
 			ds = ds == 16 ? 1 : ds * 2;
-			imageView.setDownsampling(ds);
+			imageView.setDownSampling(ds);
 			((Button) v).setText(String.valueOf(ds));
 		});
 		return rootView;

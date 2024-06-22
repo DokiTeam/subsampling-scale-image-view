@@ -13,7 +13,17 @@
 			<enum name="immediate" value="1" />
 			<enum name="deferred" value="2" />
 		</attr>
-		<attr name="downsampling" format="integer" />
+		<attr name="downSampling" format="integer" />
+		<attr name="doubleTapZoomStyle" format="enum">
+			<enum name="fixed" value="1" />
+			<enum name="center" value="2" />
+			<enum name="immediate" value="3" />
+		</attr>
+		<attr name="panLimit" format="enum">
+			<enum name="inside" value="1" />
+			<enum name="outside" value="2" />
+			<enum name="center" value="3" />
+		</attr>
 	</declare-styleable>
 
 </resources>

@@ -49,14 +49,14 @@ internal class GestureListener(
 				// Store quick scale params. This will become either a double tap zoom or a
 				// quick scale depending on whether the user swipes.
 				view.vCenterStart = PointF(e.x, e.y)
-				view.vTranslateStart = PointF(vTranslate.x, vTranslate.y)
+				view.vTranslateStart = vTranslate.copy()
 				view.scaleStart = view.scale
 				view.isQuickScaling = true
 				view.isZooming = true
 				view.quickScaleLastDistance = -1f
 				view.quickScaleSCenter = view.viewToSourceCoord(view.vCenterStart!!)
 				view.quickScaleVStart = PointF(e.x, e.y)
-				view.quickScaleVLastPoint = PointF(view.quickScaleSCenter!!.x, view.quickScaleSCenter!!.y)
+				view.quickScaleVLastPoint = view.quickScaleSCenter!!.copy()
 				view.quickScaleMoved = false
 				// We need to get events in onTouchEvent after this.
 				false
