@@ -4,13 +4,14 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.annotation.WorkerThread
+import com.davemorrissey.labs.subscaleview.ImageSource
 
 /**
  * Interface for image decoding classes, allowing the default [android.graphics.BitmapFactory]
  * based on the Skia library to be replaced with a custom class.
  */
 public interface ImageDecoder {
-	
+
 	/**
 	 * Decode an image. The URI can be in one of the following formats:
 	 * <br></br>
@@ -28,4 +29,9 @@ public interface ImageDecoder {
 	@Throws(Exception::class)
 	@WorkerThread
 	public fun decode(context: Context, uri: Uri, sampleSize: Int): Bitmap
+
+	@Throws(Exception::class)
+	@WorkerThread
+	public fun decode(context: Context, source: ImageSource, sampleSize: Int): Bitmap =
+		decode(context, source.toUri(context), sampleSize)
 }

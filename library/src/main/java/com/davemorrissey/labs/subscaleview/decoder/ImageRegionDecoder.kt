@@ -6,13 +6,14 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.net.Uri
 import androidx.annotation.WorkerThread
+import com.davemorrissey.labs.subscaleview.ImageSource
 
 /**
  * Interface for image decoding classes, allowing the default [android.graphics.BitmapRegionDecoder]
  * based on the Skia library to be replaced with a custom class.
  */
 public interface ImageRegionDecoder {
-	
+
 	/**
 	 * Initialise the decoder. When possible, perform initial setup work once in this method. The
 	 * dimensions of the image must be returned. The URI can be in one of the following formats:
@@ -30,6 +31,10 @@ public interface ImageRegionDecoder {
 	@Throws(Exception::class)
 	@WorkerThread
 	public fun init(context: Context, uri: Uri): Point
+
+	@Throws(Exception::class)
+	@WorkerThread
+	public fun init(context: Context, source: ImageSource): Point = init(context, source.toUri(context))
 
 	/**
 	 *

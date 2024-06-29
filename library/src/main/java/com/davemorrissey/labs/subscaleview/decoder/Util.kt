@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
+import com.davemorrissey.labs.subscaleview.ImageSource
 import java.io.InputStream
 
 internal fun BitmapRegionDecoder(pathName: String): BitmapRegionDecoder {
@@ -87,3 +88,11 @@ internal fun ensureNotInterrupted() {
 	}
 }
 
+internal fun ImageSource.toUri(context: Context): Uri = when (this) {
+	is ImageSource.Resource -> Uri.parse(
+		ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.packageName + "/" + resourceId,
+	)
+
+	is ImageSource.Uri -> uri
+	is ImageSource.Bitmap -> throw IllegalArgumentException("Bitmap source cannot be represented as Uri")
+}

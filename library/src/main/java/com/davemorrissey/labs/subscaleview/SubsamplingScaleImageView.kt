@@ -36,6 +36,7 @@ import com.davemorrissey.labs.subscaleview.decoder.ImageDecoder
 import com.davemorrissey.labs.subscaleview.decoder.ImageRegionDecoder
 import com.davemorrissey.labs.subscaleview.decoder.SkiaImageDecoder
 import com.davemorrissey.labs.subscaleview.decoder.SkiaImageRegionDecoder
+import com.davemorrissey.labs.subscaleview.decoder.toUri
 import com.davemorrissey.labs.subscaleview.internal.Anim
 import com.davemorrissey.labs.subscaleview.internal.ClearingLifecycleObserver
 import com.davemorrissey.labs.subscaleview.internal.CompositeImageEventListener
@@ -438,15 +439,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 			else -> {
 				sRegion = imageSource.region
-				@Suppress("KotlinConstantConditions")
-				uri = when (imageSource) {
-					is ImageSource.Resource -> Uri.parse(
-						ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.packageName + "/" + imageSource.resourceId,
-					)
-
-					is ImageSource.Uri -> imageSource.uri
-					is ImageSource.Bitmap -> error("")
-				}.also { uri ->
+				uri = imageSource.toUri(context).also { uri ->
 					if (imageSource.isTilingEnabled || sRegion != null) {
 						// Load the bitmap using tile decoding.
 						initTiles(regionDecoderFactory, uri)
