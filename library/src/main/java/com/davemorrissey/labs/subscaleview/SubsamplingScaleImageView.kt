@@ -311,6 +311,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	// Event listener
 	private val onImageEventListeners = CompositeImageEventListener()
 
+	protected val onImageEventListener: OnImageEventListener
+		get() = onImageEventListeners
+
 	// Scale and center listener
 	public var onStateChangedListener: OnStateChangedListener? = null
 
@@ -353,7 +356,9 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	// The logical density of the display
 	private val density = context.resources.displayMetrics.density
 	private val viewConfig = ViewConfiguration.get(context)
-	private val coroutineScope = CoroutineScope(Dispatchers.Main.immediate + InternalErrorHandler() + SupervisorJob())
+	protected val coroutineScope: CoroutineScope = CoroutineScope(
+		Dispatchers.Main.immediate + InternalErrorHandler() + SupervisorJob(),
+	)
 
 	init {
 		setMinimumDpi(160)
@@ -1216,7 +1221,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 
 	private fun invalidateTiles() {
 		tileMap?.invalidateAll()
-		decoder?.let { d ->
+		decoder?.let { _ ->
 			_downSampling = downSampling
 			refreshRequiredTiles(load = true)
 			onDownSamplingChanged()
@@ -1762,14 +1767,15 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * pan limits, keeping the requested center as near to the middle of the screen as allowed.
 	 */
 	@JvmSynthetic
-	internal fun limitedSCenter(sCenterX: Float, sCenterY: Float, scale: Float, sTarget: PointF) = sTarget.also { target ->
-		val vTranslate: PointF = vTranslateForSCenter(sCenterX, sCenterY, scale)
-		val vxCenter = paddingLeft + (width - paddingRight - paddingLeft) / 2
-		val vyCenter = paddingTop + (height - paddingBottom - paddingTop) / 2
-		val sx = (vxCenter - vTranslate.x) / scale
-		val sy = (vyCenter - vTranslate.y) / scale
-		target.set(sx, sy)
-	}
+	internal fun limitedSCenter(sCenterX: Float, sCenterY: Float, scale: Float, sTarget: PointF) =
+		sTarget.also { target ->
+			val vTranslate: PointF = vTranslateForSCenter(sCenterX, sCenterY, scale)
+			val vxCenter = paddingLeft + (width - paddingRight - paddingLeft) / 2
+			val vyCenter = paddingTop + (height - paddingBottom - paddingTop) / 2
+			val sx = (vxCenter - vTranslate.x) / scale
+			val sy = (vyCenter - vTranslate.y) / scale
+			target.set(sx, sy)
+		}
 
 	/**
 	 * Adjusts current scale and translate values to keep scale within the allowed range and the image on screen. Minimum scale
