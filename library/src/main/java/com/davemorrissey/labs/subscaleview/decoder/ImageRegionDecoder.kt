@@ -7,6 +7,7 @@ import android.graphics.Rect
 import android.net.Uri
 import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.ImageSource
+import org.jetbrains.annotations.Blocking
 
 /**
  * Interface for image decoding classes, allowing the default [android.graphics.BitmapRegionDecoder]
@@ -30,10 +31,12 @@ public interface ImageRegionDecoder {
 	 */
 	@Throws(Exception::class)
 	@WorkerThread
+	@Blocking
 	public fun init(context: Context, uri: Uri): Point
 
 	@Throws(Exception::class)
 	@WorkerThread
+	@Blocking
 	public fun init(context: Context, source: ImageSource): Point = init(context, source.toUri(context))
 
 	/**
@@ -55,6 +58,7 @@ public interface ImageRegionDecoder {
 	 * @return The decoded region. It is safe to return null if decoding fails.
 	 */
 	@WorkerThread
+	@Blocking
 	public fun decodeRegion(sRect: Rect, sampleSize: Int): Bitmap
 
 	/**

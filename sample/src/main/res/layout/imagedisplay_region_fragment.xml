@@ -14,7 +14,7 @@
 
         <TextView style="@style/footerNote"
                 android:id="@+id/note"
-                android:text="@string/display.p3.text"
+                android:text="@string/display.p4.text"
                 android:layout_toStartOf="@id/rotate"
                 android:layout_toEndOf="@id/previous"/>
 

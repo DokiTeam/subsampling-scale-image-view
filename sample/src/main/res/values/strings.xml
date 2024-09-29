@@ -39,12 +39,16 @@
     <string name="display.p1.text">
         This image is 7,800 x 6,240 pixels. On most devices it will be subsampled, and higher quality tiles are loaded as you zoom in.
     </string>
-    <string name="display.p2.subtitle">Rotation</string>
+    <string name="display.p2.subtitle">Animated</string>
     <string name="display.p2.text">
+        Animated GIF image
+    </string>
+    <string name="display.p3.subtitle">Rotation</string>
+    <string name="display.p3.text">
         This image has been rotated 90 degrees. Tap the button to rotate it. EXIF rotation is supported for external files.
     </string>
-    <string name="display.p3.subtitle">Display region</string>
-    <string name="display.p3.text">Set the region to display instead of the whole image.</string>
+    <string name="display.p4.subtitle">Display region</string>
+    <string name="display.p4.text">Set the region to display instead of the whole image.</string>
 
     <string name="event.link">Event handling</string>
     <string name="event.title">Event handling</string>

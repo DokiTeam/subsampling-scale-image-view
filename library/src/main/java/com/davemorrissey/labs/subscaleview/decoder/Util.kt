@@ -8,13 +8,16 @@ import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
+import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.ImageSource
+import org.jetbrains.annotations.Blocking
 import java.io.InputStream
 
+@Blocking
 internal fun BitmapRegionDecoder(pathName: String): BitmapRegionDecoder {
 	return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 		BitmapRegionDecoder.newInstance(pathName)
@@ -24,6 +27,7 @@ internal fun BitmapRegionDecoder(pathName: String): BitmapRegionDecoder {
 	}
 }
 
+@Blocking
 internal fun BitmapRegionDecoder(inputStream: InputStream): BitmapRegionDecoder {
 	return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 		BitmapRegionDecoder.newInstance(inputStream)
@@ -45,6 +49,7 @@ internal fun Context.isLowMemory(): Boolean {
 }
 
 @WorkerThread
+@Blocking
 @SuppressLint("DiscouragedApi")
 internal fun decodeResource(context: Context, uri: Uri, options: BitmapFactory.Options): Bitmap {
 	val packageName = uri.authority
@@ -69,6 +74,7 @@ internal fun decodeResource(context: Context, uri: Uri, options: BitmapFactory.O
 }
 
 @WorkerThread
+@Blocking
 internal fun ContentResolver.decodeBitmap(uri: Uri, options: BitmapFactory.Options): Bitmap? {
 	return openInputStream(uri)?.use { inputStream ->
 		BitmapFactory.decodeStream(inputStream, null, options)
@@ -76,15 +82,10 @@ internal fun ContentResolver.decodeBitmap(uri: Uri, options: BitmapFactory.Optio
 }
 
 @WorkerThread
+@Blocking
 internal fun AssetManager.decodeBitmap(name: String, options: BitmapFactory.Options): Bitmap? {
 	return open(name).use { inputStream ->
 		BitmapFactory.decodeStream(inputStream, null, options)
-	}
-}
-
-internal fun ensureNotInterrupted() {
-	if (Thread.interrupted()) {
-		throw InterruptedException()
 	}
 }
 

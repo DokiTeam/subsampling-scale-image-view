@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.ImageSource
+import org.jetbrains.annotations.Blocking
 
 /**
  * Interface for image decoding classes, allowing the default [android.graphics.BitmapFactory]
@@ -28,10 +29,12 @@ public interface ImageDecoder {
 	 */
 	@Throws(Exception::class)
 	@WorkerThread
+	@Blocking
 	public fun decode(context: Context, uri: Uri, sampleSize: Int): Bitmap
 
 	@Throws(Exception::class)
 	@WorkerThread
+	@Blocking
 	public fun decode(context: Context, source: ImageSource, sampleSize: Int): Bitmap =
 		decode(context, source.toUri(context), sampleSize)
 }

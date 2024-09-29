@@ -17,6 +17,7 @@ public class ImageDisplayActivity extends AbstractFragmentsActivity {
 
     private static final List<Class<? extends Fragment>> FRAGMENTS = Arrays.asList(
             ImageDisplayLargeFragment.class,
+            ImageDisplayAnimatedFragment.class,
             ImageDisplayRotateFragment.class,
             ImageDisplayRegionFragment.class
     );
@@ -25,7 +26,8 @@ public class ImageDisplayActivity extends AbstractFragmentsActivity {
         super(display_title, fragments_activity, Arrays.asList(
                 new Page(display_p1_subtitle, display_p1_text),
                 new Page(display_p2_subtitle, display_p2_text),
-                new Page(display_p3_subtitle, display_p3_text)
+                new Page(display_p3_subtitle, display_p3_text),
+                new Page(display_p4_subtitle, display_p4_text)
         ));
     }
 
