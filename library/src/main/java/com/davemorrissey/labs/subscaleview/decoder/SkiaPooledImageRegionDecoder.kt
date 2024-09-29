@@ -9,7 +9,6 @@ import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.Keep
 import androidx.annotation.WorkerThread
-import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
@@ -215,7 +214,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 						val options = BitmapFactory.Options()
 						options.inSampleSize = sampleSize
 						options.inPreferredConfig = bitmapConfig
-						return decoder.decodeRegion(sRect, options) ?: throw RuntimeException(DECODER_NULL_MESSAGE)
+						return decoder.decodeRegion(sRect, options) ?: throw ImageDecodeException(uri)
 					}
 				} finally {
 					if (decoder != null) {

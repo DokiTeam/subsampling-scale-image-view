@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import com.davemorrissey.labs.subscaleview.internal.DECODER_NULL_MESSAGE
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
@@ -54,7 +53,7 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 			else -> {
 				context.contentResolver.decodeBitmap(uri, options)
 			}
-		} ?: throw RuntimeException(DECODER_NULL_MESSAGE)
+		} ?: throw ImageDecodeException(uri)
 	}
 
 	public class Factory @JvmOverloads constructor(
