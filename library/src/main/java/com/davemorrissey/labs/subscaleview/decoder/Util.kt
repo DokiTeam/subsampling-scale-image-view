@@ -8,14 +8,23 @@ import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
-import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.text.TextUtils
+import android.webkit.MimeTypeMap
 import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.ImageSource
+import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_CONTENT
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
 import org.jetbrains.annotations.Blocking
 import java.io.InputStream
+import java.net.HttpURLConnection
+import java.nio.file.Files
+import java.util.zip.ZipFile
+import kotlin.io.path.Path
 
 @Blocking
 internal fun BitmapRegionDecoder(pathName: String): BitmapRegionDecoder {
@@ -96,4 +105,36 @@ internal fun ImageSource.toUri(context: Context): Uri = when (this) {
 
 	is ImageSource.Uri -> uri
 	is ImageSource.Bitmap -> throw IllegalArgumentException("Bitmap source cannot be represented as Uri")
+}
+
+@Blocking
+@Throws(Exception::class)
+internal fun detectImageFormat(context: Context, uri: Uri): String? = when (uri.scheme) {
+	URI_SCHEME_RES -> "resource"
+	URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
+		val entry = file.getEntry(uri.fragment)
+		MimeTypeMap.getSingleton().getMimeTypeFromExtension(entry.name.substringAfterLast('.', ""))
+			?: file.getInputStream(entry).use { input ->
+				HttpURLConnection.guessContentTypeFromStream(input)
+			}
+	}
+
+	URI_SCHEME_FILE -> {
+		val path = uri.schemeSpecificPart
+		if (path.startsWith(URI_PATH_ASSET, ignoreCase = true)) {
+			val assetName = path.substring(URI_PATH_ASSET.length)
+			MimeTypeMap.getSingleton().getMimeTypeFromExtension(assetName.substringAfterLast('.', ""))
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			Files.probeContentType(Path(path))
+		} else {
+			val options = BitmapFactory.Options()
+			options.inJustDecodeBounds = true
+			BitmapFactory.decodeFile(path)
+			options.outMimeType
+		}
+	}
+
+	URI_SCHEME_CONTENT -> context.contentResolver.getType(uri)
+
+	else -> null
 }

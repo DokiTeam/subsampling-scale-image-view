@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.annotation.Keep
 import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_CONTENT
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
@@ -107,14 +108,15 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 	@WorkerThread
 	private fun initialiseDecoder() {
 		val uri = checkNotNull(uri)
+		val context = checkNotNull(context)
 		var fileLength = Long.MAX_VALUE
-		val decoder: BitmapRegionDecoder? = when (uri.scheme) {
+		val decoder: BitmapRegionDecoder = when (uri.scheme) {
 			URI_SCHEME_RES -> {
 				val packageName = uri.authority
-				val res = if (packageName == null || context!!.packageName == packageName) {
-					context!!.resources
+				val res = if (packageName == null || context.packageName == packageName) {
+					context.resources
 				} else {
-					context!!.packageManager.getResourcesForApplication(packageName)
+					context.packageManager.getResourcesForApplication(packageName)
 				}
 				var id = 0
 				val segments = uri.pathSegments
@@ -129,7 +131,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 					}
 				}
 				try {
-					val descriptor = context!!.resources.openRawResourceFd(id)
+					val descriptor = context.resources.openRawResourceFd(id)
 					fileLength = descriptor.length
 				} catch (e: Exception) {
 					// Pooling disabled
@@ -137,10 +139,11 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				res.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
 
-			URI_SCHEME_ZIP -> {
-				val file = ZipFile(uri.schemeSpecificPart)
+			URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
 				val entry = file.getEntry(uri.fragment)
-				file.use { BitmapRegionDecoder(it.getInputStream(entry)) }
+				file.getInputStream(entry).use { input ->
+					BitmapRegionDecoder(input)
+				}
 			}
 
 			URI_SCHEME_FILE -> {
@@ -148,12 +151,12 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				if (path.startsWith(URI_PATH_ASSET, ignoreCase = true)) {
 					val assetName = path.substring(URI_PATH_ASSET.length)
 					try {
-						val descriptor = context!!.assets.openFd(assetName)
+						val descriptor = context.assets.openFd(assetName)
 						fileLength = descriptor.length
 					} catch (e: Exception) {
 						// Pooling disabled
 					}
-					context!!.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
+					context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
 				} else {
 					val d = BitmapRegionDecoder(path)
 					try {
@@ -168,8 +171,8 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				}
 			}
 
-			else -> {
-				val contentResolver = context!!.contentResolver
+			URI_SCHEME_CONTENT -> {
+				val contentResolver = context.contentResolver
 				val d = contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it) }
 				try {
 					contentResolver.openAssetFileDescriptor(uri, "r")?.use { descriptor ->
@@ -180,9 +183,11 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				}
 				d
 			}
-		}
+
+			else -> throw UnsupportedUriException(uri.toString())
+		} ?: throw ImageDecodeException.create(context, uri)
 		this.fileLength = fileLength
-		imageDimensions[decoder!!.width] = decoder.height
+		imageDimensions[decoder.width] = decoder.height
 		decoderLock.writeLock().lock()
 		try {
 			decoderPool?.add(decoder)
@@ -214,7 +219,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 						val options = BitmapFactory.Options()
 						options.inSampleSize = sampleSize
 						options.inPreferredConfig = bitmapConfig
-						return decoder.decodeRegion(sRect, options) ?: throw ImageDecodeException(uri)
+						return decoder.decodeRegion(sRect, options) ?: throw ImageDecodeException.create(context, uri)
 					}
 				} finally {
 					if (decoder != null) {

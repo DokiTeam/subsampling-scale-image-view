@@ -8,6 +8,7 @@ import android.net.Uri
 import android.text.TextUtils
 import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_CONTENT
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
@@ -61,10 +62,11 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 				context.resources.openRawResource(id).use { BitmapRegionDecoder(it) }
 			}
 
-			URI_SCHEME_ZIP -> {
-				val file = ZipFile(uri.schemeSpecificPart)
+			URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
 				val entry = file.getEntry(uri.fragment)
-				file.use { BitmapRegionDecoder(it.getInputStream(entry)) }
+				file.getInputStream(entry).use { input ->
+					BitmapRegionDecoder(input)
+				}
 			}
 
 			URI_SCHEME_FILE -> {
@@ -77,11 +79,13 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 				}
 			}
 
-			else -> {
+			URI_SCHEME_CONTENT -> {
 				val contentResolver = context.contentResolver
 				contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it) }
-					?: error("Content resolver returned null stream. Unable to initialise with uri.")
+					?: throw ImageDecodeException.create(context, uri)
 			}
+
+			else -> throw UnsupportedUriException(uri.toString())
 		}
 		return Point(decoder!!.width, decoder!!.height)
 	}

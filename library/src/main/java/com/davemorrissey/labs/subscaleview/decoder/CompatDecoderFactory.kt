@@ -21,10 +21,9 @@ public class CompatDecoderFactory<T> @JvmOverloads constructor(
 	)
 	override fun make(): T {
 		return if (bitmapConfig == null) {
-			clazz.newInstance()
+			clazz.getDeclaredConstructor().newInstance()
 		} else {
-			val ctor = clazz.getConstructor(Bitmap.Config::class.java)
-			ctor.newInstance(bitmapConfig)
+			clazz.getConstructor(Bitmap.Config::class.java).newInstance(bitmapConfig)
 		}
 	}
 }

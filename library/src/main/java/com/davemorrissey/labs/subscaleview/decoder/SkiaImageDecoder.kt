@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
+import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_CONTENT
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
@@ -28,15 +29,12 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 		options.inPreferredConfig = bitmapConfig
 		options.inSampleSize = sampleSize
 		return when (uri.scheme) {
-			URI_SCHEME_RES -> {
-				decodeResource(context, uri, options)
-			}
+			URI_SCHEME_RES -> decodeResource(context, uri, options)
 
-			URI_SCHEME_ZIP -> {
-				val file = ZipFile(uri.schemeSpecificPart)
+			URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
 				val entry = file.getEntry(uri.fragment)
-				file.use {
-					BitmapFactory.decodeStream(it.getInputStream(entry), null, options)
+				file.getInputStream(entry).use { input ->
+					BitmapFactory.decodeStream(input, null, options)
 				}
 			}
 
@@ -50,10 +48,10 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 				}
 			}
 
-			else -> {
-				context.contentResolver.decodeBitmap(uri, options)
-			}
-		} ?: throw ImageDecodeException(uri)
+			URI_SCHEME_CONTENT -> context.contentResolver.decodeBitmap(uri, options)
+
+			else -> throw UnsupportedUriException(uri.toString())
+		} ?: throw ImageDecodeException.create(context, uri)
 	}
 
 	public class Factory @JvmOverloads constructor(
