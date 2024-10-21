@@ -136,13 +136,13 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 				} catch (e: Exception) {
 					// Pooling disabled
 				}
-				res.openRawResource(id).use { BitmapRegionDecoder(it) }
+				res.openRawResource(id).use { BitmapRegionDecoder(it, context, uri) }
 			}
 
 			URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
 				val entry = file.getEntry(uri.fragment)
 				file.getInputStream(entry).use { input ->
-					BitmapRegionDecoder(input)
+					BitmapRegionDecoder(input, context, uri)
 				}
 			}
 
@@ -156,9 +156,10 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 					} catch (e: Exception) {
 						// Pooling disabled
 					}
-					context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
+					context.assets.open(assetName, AssetManager.ACCESS_RANDOM)
+						.use { BitmapRegionDecoder(it, context, uri) }
 				} else {
-					val d = BitmapRegionDecoder(path)
+					val d = BitmapRegionDecoder(path, context, uri)
 					try {
 						val file = File(path)
 						if (file.exists()) {
@@ -173,7 +174,7 @@ public open class SkiaPooledImageRegionDecoder @JvmOverloads constructor(
 
 			URI_SCHEME_CONTENT -> {
 				val contentResolver = context.contentResolver
-				val d = contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it) }
+				val d = contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it, context, uri) }
 				try {
 					contentResolver.openAssetFileDescriptor(uri, "r")?.use { descriptor ->
 						fileLength = descriptor.length

@@ -77,7 +77,9 @@ internal fun getExifOrientation(context: Context, sourceUri: Uri): Int = runCatc
 		URI_SCHEME_ZIP -> {
 			ZipFile(sourceUri.schemeSpecificPart).use { file ->
 				val entry = file.getEntry(sourceUri.fragment)
-				exifOrientation = ExifInterface(file.getInputStream(entry)).getSsivOrientation(exifOrientation)
+				exifOrientation = file.getInputStream(entry).use {
+					ExifInterface(it).getSsivOrientation(exifOrientation)
+				}
 			}
 		}
 	}

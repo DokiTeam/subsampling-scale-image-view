@@ -14,12 +14,14 @@ import android.text.TextUtils
 import android.webkit.MimeTypeMap
 import androidx.annotation.WorkerThread
 import com.davemorrissey.labs.subscaleview.ImageSource
+import com.davemorrissey.labs.subscaleview.internal.ERROR_FORMAT_NOT_SUPPORTED
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_CONTENT
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_RES
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
 import org.jetbrains.annotations.Blocking
+import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.nio.file.Files
@@ -27,23 +29,35 @@ import java.util.zip.ZipFile
 import kotlin.io.path.Path
 
 @Blocking
-internal fun BitmapRegionDecoder(pathName: String): BitmapRegionDecoder {
-	return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+internal fun BitmapRegionDecoder(pathName: String, context: Context?, uri: Uri?): BitmapRegionDecoder = try {
+	if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 		BitmapRegionDecoder.newInstance(pathName)
 	} else {
 		@Suppress("DEPRECATION")
 		BitmapRegionDecoder.newInstance(pathName, false)
 	}
+} catch (e: IOException) {
+	if (e.message == ERROR_FORMAT_NOT_SUPPORTED) {
+		throw ImageDecodeException.create(context, uri)
+	} else {
+		throw e
+	}
 }
 
 @Blocking
-internal fun BitmapRegionDecoder(inputStream: InputStream): BitmapRegionDecoder {
-	return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+internal fun BitmapRegionDecoder(inputStream: InputStream, context: Context?, uri: Uri?): BitmapRegionDecoder = try {
+	if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 		BitmapRegionDecoder.newInstance(inputStream)
 	} else {
 		@Suppress("DEPRECATION")
 		BitmapRegionDecoder.newInstance(inputStream, false)
 	} ?: throw RuntimeException("Cannot instantiate BitmapRegionDecoder")
+} catch (e: IOException) {
+	if (e.message == ERROR_FORMAT_NOT_SUPPORTED) {
+		throw ImageDecodeException.create(context, uri)
+	} else {
+		throw e
+	}
 }
 
 internal fun Context.isLowMemory(): Boolean {

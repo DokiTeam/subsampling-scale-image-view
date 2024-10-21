@@ -59,13 +59,13 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 					} catch (ignored: NumberFormatException) {
 					}
 				}
-				context.resources.openRawResource(id).use { BitmapRegionDecoder(it) }
+				context.resources.openRawResource(id).use { BitmapRegionDecoder(it, context, uri) }
 			}
 
 			URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
 				val entry = file.getEntry(uri.fragment)
 				file.getInputStream(entry).use { input ->
-					BitmapRegionDecoder(input)
+					BitmapRegionDecoder(input, context, uri)
 				}
 			}
 
@@ -73,15 +73,16 @@ public class SkiaImageRegionDecoder @JvmOverloads constructor(
 				val path = uri.schemeSpecificPart
 				if (path.startsWith(URI_PATH_ASSET, ignoreCase = true)) {
 					val assetName = path.substring(URI_PATH_ASSET.length)
-					context.assets.open(assetName, AssetManager.ACCESS_RANDOM).use { BitmapRegionDecoder(it) }
+					context.assets.open(assetName, AssetManager.ACCESS_RANDOM)
+						.use { BitmapRegionDecoder(it, context, uri) }
 				} else {
-					BitmapRegionDecoder(path)
+					BitmapRegionDecoder(path, context, uri)
 				}
 			}
 
 			URI_SCHEME_CONTENT -> {
 				val contentResolver = context.contentResolver
-				contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it) }
+				contentResolver.openInputStream(uri)?.use { BitmapRegionDecoder(it, context, uri) }
 					?: throw ImageDecodeException.create(context, uri)
 			}
 
