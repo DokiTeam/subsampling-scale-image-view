@@ -5,10 +5,11 @@ import android.net.Uri
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
 
-public class ImageDecodeException(
+public class ImageDecodeException @JvmOverloads public constructor(
 	public val uri: String?,
 	public val format: String?,
-) : IOException(MESSAGE.format(format)) {
+	message: String = MESSAGE.format(format),
+) : IOException(message) {
 
 	internal companion object {
 
@@ -24,6 +25,6 @@ public class ImageDecodeException(
 			ImageDecodeException(uri?.toString(), null).apply { addSuppressed(e) }
 		}
 
-		private val MESSAGE = "Image decoder returned null bitmap - image format %s may not be supported"
+		private const val MESSAGE = "Cannot decode image - format %s may not be supported"
 	}
 }
