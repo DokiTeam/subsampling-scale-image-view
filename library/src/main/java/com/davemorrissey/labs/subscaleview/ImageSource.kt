@@ -3,6 +3,7 @@ package com.davemorrissey.labs.subscaleview
 import android.content.ContentResolver.SCHEME_FILE
 import android.graphics.Rect
 import android.os.Parcelable
+import androidx.annotation.CheckResult
 import androidx.annotation.DrawableRes
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
@@ -20,6 +21,7 @@ public sealed interface ImageSource : Parcelable {
 
 	public override fun hashCode(): Int
 
+	@CheckResult
 	public fun region(region: Rect?): ImageSource
 
 	@Parcelize
@@ -28,7 +30,8 @@ public sealed interface ImageSource : Parcelable {
 		public override val region: Rect?,
 	) : ImageSource {
 
-		override fun region(region: Rect?): ImageSource = region(region = region)
+		@CheckResult
+		override fun region(region: Rect?): ImageSource = copy(region = region)
 	}
 
 	@Parcelize
@@ -37,7 +40,8 @@ public sealed interface ImageSource : Parcelable {
 		public override val region: Rect?,
 	) : ImageSource {
 
-		override fun region(region: Rect?): ImageSource = region(region = region)
+		@CheckResult
+		override fun region(region: Rect?): ImageSource = copy(region = region)
 	}
 
 	@Parcelize
@@ -47,7 +51,8 @@ public sealed interface ImageSource : Parcelable {
 		public override val region: Rect?,
 	) : ImageSource {
 
-		override fun region(region: Rect?): ImageSource = region(region = region)
+		@CheckResult
+		override fun region(region: Rect?): ImageSource = copy(region = region)
 	}
 
 	public companion object {
