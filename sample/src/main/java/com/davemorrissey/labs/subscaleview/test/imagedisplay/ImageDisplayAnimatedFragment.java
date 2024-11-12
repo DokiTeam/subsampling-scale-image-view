@@ -1,18 +1,15 @@
 package com.davemorrissey.labs.subscaleview.test.imagedisplay;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
-import com.davemorrissey.labs.subscaleview.test.R;
 import com.davemorrissey.labs.subscaleview.test.R.id;
 import com.davemorrissey.labs.subscaleview.test.R.layout;
 
@@ -26,7 +23,7 @@ public class ImageDisplayAnimatedFragment extends Fragment {
 			rootView.findViewById(id.next).setOnClickListener(v -> activity.next());
 		}
 		SubsamplingScaleImageView imageView = rootView.findViewById(id.imageView);
-		imageView.setImage(ImageSource.Asset("animated.gif"));
+		imageView.setImage(ImageSource.asset("animated.gif"));
 		return rootView;
 	}
 }

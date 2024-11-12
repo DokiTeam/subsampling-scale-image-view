@@ -1,12 +1,14 @@
 Subsampling Scale Image View (Kotatsu fork)
 ===========================
 
-> A custom image view for Android, designed for photo galleries and displaying huge images (e.g. maps and building plans) without `OutOfMemoryError`s. Includes pinch to zoom, panning, rotation and animation support, and allows easy extension so you can add your own overlays and touch event detection.
+> A custom image view for Android, designed for photo galleries and displaying huge images (e.g. maps and building
+> plans) without `OutOfMemoryError`s. Includes pinch to zoom, panning, rotation and animation support, and allows easy
+> extension so you can add your own overlays and touch event detection.
 
 # Differences from [upstream](https://github.com/davemorrissey/subsampling-scale-image-view)
 
-- Fully rewriten in Kotlin and using Coroutines for image loading (using from Java code is supported as well)
-- Loading images from zip files (`ImageSource.Zip`)
+- Fully rewritten in Kotlin and using Coroutines for image loading (using from Java code is supported as well)
+- Loading images from zip files (`ImageSource.zipEntry`)
 - Support for ColorFilter
 - Automatically stores and restores state (zoom and center)
 - Supports Interpolator for animation
@@ -14,6 +16,7 @@ Subsampling Scale Image View (Kotatsu fork)
 - Supports downsampling
 
 ---
+
 ### Usage
 
 1. Add it in your root build.gradle at the end of repositories:

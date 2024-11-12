@@ -9,6 +9,7 @@ import android.view.animation.DecelerateInterpolator
 import androidx.annotation.CheckResult
 import androidx.annotation.WorkerThread
 import androidx.exifinterface.media.ExifInterface
+import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.Companion.VALID_ORIENTATIONS
 import java.util.zip.ZipFile
@@ -124,3 +125,12 @@ internal fun SubsamplingScaleImageView.panBy(dx: Float, dy: Float): Boolean {
 }
 
 internal fun PointF.copy() = PointF(x, y)
+
+internal val ImageSource.isTilingEnabled: Boolean
+	get() = this !is ImageSource.Bitmap
+
+internal val ImageSource.sWidth: Int
+	get() = region?.width() ?: (this as? ImageSource.Bitmap)?.bitmap?.width ?: 0
+
+internal val ImageSource.sHeight: Int
+	get() = region?.height() ?: (this as? ImageSource.Bitmap)?.bitmap?.height ?: 0

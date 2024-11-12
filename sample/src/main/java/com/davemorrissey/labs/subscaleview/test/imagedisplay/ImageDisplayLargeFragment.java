@@ -1,14 +1,13 @@
 package com.davemorrissey.labs.subscaleview.test.imagedisplay;
 
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
@@ -26,7 +25,7 @@ public class ImageDisplayLargeFragment extends Fragment {
 			rootView.findViewById(id.next).setOnClickListener(v -> activity.next());
 		}
 		SubsamplingScaleImageView imageView = rootView.findViewById(id.imageView);
-		imageView.setImage(ImageSource.Asset("card.png"));
+		imageView.setImage(ImageSource.asset("card.png"));
 		rootView.findViewById(R.id.downsampling).setOnClickListener(v -> {
 			int ds = imageView.getDownSampling();
 			ds = ds == 16 ? 1 : ds * 2;

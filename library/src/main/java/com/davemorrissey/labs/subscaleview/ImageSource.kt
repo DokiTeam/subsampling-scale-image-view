@@ -2,64 +2,61 @@ package com.davemorrissey.labs.subscaleview
 
 import android.content.ContentResolver.SCHEME_FILE
 import android.graphics.Rect
+import android.os.Parcelable
 import androidx.annotation.DrawableRes
-import androidx.annotation.ReturnThis
 import com.davemorrissey.labs.subscaleview.internal.URI_PATH_ASSET
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_FILE
 import com.davemorrissey.labs.subscaleview.internal.URI_SCHEME_ZIP
+import kotlinx.parcelize.Parcelize
 import java.io.File
 import android.graphics.Bitmap as AndroidBitmap
 import android.net.Uri as AndroidUri
 
-public sealed class ImageSource(
-	public var isTilingEnabled: Boolean,
-) {
+public sealed interface ImageSource : Parcelable {
 
-	internal var region: Rect? = null
-		set(value) {
-			field = value
-			if (value != null) {
-				sWidth = value.width()
-				sHeight = value.height()
-			}
-		}
+	public val region: Rect?
 
-	public var sWidth: Int = 0
-		protected set
-	public var sHeight: Int = 0
-		protected set
+	public override fun equals(other: Any?): Boolean
 
-	public class Resource(@DrawableRes public val resourceId: Int) : ImageSource(true)
+	public override fun hashCode(): Int
 
-	public class Uri(public val uri: AndroidUri) : ImageSource(true)
+	public fun region(region: Rect?): ImageSource
 
-	public class Bitmap @JvmOverloads constructor(
+	@Parcelize
+	public data class Uri internal constructor(
+		public val uri: AndroidUri,
+		public override val region: Rect?,
+	) : ImageSource {
+
+		override fun region(region: Rect?): ImageSource = region(region = region)
+	}
+
+	@Parcelize
+	public data class Resource internal constructor(
+		@DrawableRes public val resourceId: Int,
+		public override val region: Rect?,
+	) : ImageSource {
+
+		override fun region(region: Rect?): ImageSource = region(region = region)
+	}
+
+	@Parcelize
+	public data class Bitmap internal constructor(
 		public val bitmap: AndroidBitmap,
-		public val isCached: Boolean = false,
-	) : ImageSource(false) {
-		init {
-			sWidth = bitmap.width
-			sHeight = bitmap.height
-		}
+		public val isCached: Boolean,
+		public override val region: Rect?,
+	) : ImageSource {
+
+		override fun region(region: Rect?): ImageSource = region(region = region)
 	}
 
-	@ReturnThis
-	public fun region(left: Int, top: Int, right: Int, bottom: Int): ImageSource {
-		region = Rect(left, top, right, bottom)
-		return this
-	}
-
-	@ReturnThis
-	public fun region(rect: Rect): ImageSource {
-		region = Rect(rect)
-		return this
-	}
-
-	@Suppress("FunctionName")
 	public companion object {
 
 		@JvmStatic
-		public fun Uri(uri: String): Uri {
+		public fun uri(uri: AndroidUri): Uri = Uri(uri, null)
+
+		@JvmStatic
+		public fun uri(uri: String): Uri {
 			var uriString = uri
 			if (!uriString.contains("://")) {
 				if (uriString.startsWith("/")) {
@@ -67,20 +64,35 @@ public sealed class ImageSource(
 				}
 				uriString = "$SCHEME_FILE:///$uriString"
 			}
-			return Uri(AndroidUri.parse(uriString))
+			return uri(AndroidUri.parse(uriString))
 		}
 
 		@JvmStatic
-		public fun Asset(assetName: String): Uri = Uri(
+		public fun asset(assetName: String): Uri = uri(
 			AndroidUri.fromParts(URI_SCHEME_FILE, URI_PATH_ASSET + assetName, null),
 		)
 
 		@JvmStatic
-		public fun File(file: File): Uri = Uri(AndroidUri.fromFile(file))
+		public fun file(file: File): Uri = uri(AndroidUri.fromFile(file))
 
 		@JvmStatic
-		public fun Zip(file: File, entry: String): Uri = Uri(
-			AndroidUri.fromParts(URI_SCHEME_ZIP, file.absolutePath, entry),
+		public fun zipEntry(zipFile: File, entryPath: String): Uri = uri(
+			AndroidUri.fromParts(URI_SCHEME_ZIP, zipFile.absolutePath, entryPath),
 		)
+
+		@JvmStatic
+		public fun resource(@DrawableRes drawableResId: Int): Resource = Resource(drawableResId, null)
+
+		/**
+		 * Create an [ImageSource] with a Bitmap that will be recycled if it is no longer used.
+		 */
+		@JvmStatic
+		public fun bitmap(bitmap: AndroidBitmap): Bitmap = Bitmap(bitmap, false, null)
+
+		/**
+		 * Create an [ImageSource] with a Bitmap that will **not** be recycled if it is no longer used.
+		 */
+		@JvmStatic
+		public fun cachedBitmap(bitmap: AndroidBitmap): Bitmap = Bitmap(bitmap, true, null)
 	}
 }

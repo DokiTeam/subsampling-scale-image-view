@@ -47,7 +47,10 @@ import com.davemorrissey.labs.subscaleview.internal.Tile
 import com.davemorrissey.labs.subscaleview.internal.TileMap
 import com.davemorrissey.labs.subscaleview.internal.TouchEventDelegate
 import com.davemorrissey.labs.subscaleview.internal.getExifOrientation
+import com.davemorrissey.labs.subscaleview.internal.isTilingEnabled
 import com.davemorrissey.labs.subscaleview.internal.panBy
+import com.davemorrissey.labs.subscaleview.internal.sHeight
+import com.davemorrissey.labs.subscaleview.internal.sWidth
 import com.davemorrissey.labs.subscaleview.internal.scaleBy
 import com.davemorrissey.labs.subscaleview.internal.setMatrixArray
 import kotlinx.coroutines.CancellationException
@@ -380,11 +383,11 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		)
 		val assetName = ta.getString(R.styleable.SubsamplingScaleImageView_assetName)
 		if (!assetName.isNullOrBlank()) {
-			setImage(ImageSource.Asset(assetName))
+			setImage(ImageSource.asset(assetName))
 		} else {
 			val resId = ta.getResourceId(R.styleable.SubsamplingScaleImageView_src, 0)
 			if (resId != 0) {
-				setImage(ImageSource.Resource(resId))
+				setImage(ImageSource.resource(resId))
 			}
 		}
 		ta.recycle()
