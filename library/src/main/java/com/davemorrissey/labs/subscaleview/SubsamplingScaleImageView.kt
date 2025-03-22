@@ -474,6 +474,15 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		tileBgPaint = null
 	}
 
+	@CheckResult
+	public fun snapshot(config: Bitmap.Config? = null): Bitmap? = bitmap?.let {
+		if (!it.isRecycled) {
+			it.copy(config ?: it.config, false)
+		} else {
+			null
+		}
+	}
+
 	/**
 	 * This is a screen density aware alternative to {@link #setMaxScale(float)}; it allows you to express the maximum
 	 * allowed scale in terms of the minimum pixel density. This avoids the problem of 1:1 scale still being
