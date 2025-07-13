@@ -14,6 +14,7 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.net.Uri
+import android.os.Build
 import android.util.AttributeSet
 import android.util.Log
 import android.view.GestureDetector
@@ -270,6 +271,13 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	public var regionDecoderFactory: DecoderFactory<out ImageRegionDecoder> = SkiaImageRegionDecoder.Factory()
 
 	// Debug values
+	private val isDebugDrawingEnabled: Boolean
+		get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			isShowingLayoutBounds
+		} else {
+			false
+		}
+
 	@JvmField
 	@JvmSynthetic
 	internal var vCenterStart: PointF? = null
@@ -569,7 +577,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * On resize, preserve center and scale. Various behaviours are possible, override this method to use another.
 	 */
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-		debug("onSizeChanged %dx%d -> %dx%d", oldw, oldh, w, h)
 		val sCenter = getCenter()
 		if (isReadySent && sCenter != null) {
 			anim = null
@@ -715,10 +722,10 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 							}
 							matrix2!!.setPolyToPoly(srcArray, 0, dstArray, 0, 4)
 							canvas.drawBitmap(tile.bitmap!!, matrix2!!, bitmapPaint)
-							if (isDebug) {
+							if (isDebugDrawingEnabled) {
 								canvas.drawRect(tile.vRect, debugLinePaint!!)
 							}
-						} else if (tile.isLoading && isDebug) {
+						} else if (tile.isLoading && isDebugDrawingEnabled) {
 							canvas.drawText(
 								"LOADING",
 								(tile.vRect.left + px(5)).toFloat(),
@@ -726,7 +733,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 								debugTextPaint!!,
 							)
 						}
-						if (tile.isVisible && isDebug) {
+						if (tile.isVisible && isDebugDrawingEnabled) {
 							canvas.drawText(
 								"ISS ${tile.sampleSize} RECT ${tile.sRect.top},${tile.sRect.left}," +
 									"${tile.sRect.bottom},${tile.sRect.right}",
@@ -777,7 +784,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			}
 			canvas.drawBitmap(bitmap!!, matrix2!!, bitmapPaint)
 		}
-		if (isDebug) {
+		if (isDebugDrawingEnabled) {
 			canvas.drawText(
 				"Scale: " + String.format(Locale.ENGLISH, "%.2f", scale) + " (" + String.format(
 					Locale.ENGLISH,
@@ -860,7 +867,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	@Synchronized
 	private fun initialiseBaseLayer(maxTileDimensions: Point) {
-		debug("initialiseBaseLayer maxTileDimensions=%dx%d", maxTileDimensions.x, maxTileDimensions.y)
 		satTemp = ScaleAndTranslate(0f, PointF(0f, 0f))
 		fitToBounds(true, satTemp!!)
 
@@ -961,7 +967,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 * Once source image and view dimensions are known, creates a map of sample size to tile grid.
 	 */
 	private fun initialiseTileMap(maxTileDimensions: Point) {
-		debug("initialiseTileMap maxTileDimensions=%dx%d", maxTileDimensions.x, maxTileDimensions.y)
 		tileMap?.recycleAll()
 		tileMap = TileMap()
 		var sampleSize = fullImageSampleSize
@@ -1126,7 +1131,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	}
 
 	private fun reset(isNewImage: Boolean) {
-		debug("reset newImage=$isNewImage")
 		scale = 0f
 		scaleStart = 0f
 		vTranslate = null
@@ -1351,7 +1355,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	@Synchronized
 	private fun onTileLoaded() {
-		debug("onTileLoaded")
 		checkReady()
 		checkImageLoaded()
 		if (isBaseLayerReady() && bitmap != null) {
@@ -1371,7 +1374,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	private fun loadBitmap(source: Uri, preview: Boolean) {
 		coroutineScope.launch {
 			try {
-				debug("BitmapLoadTask.doInBackground")
 				val bitmap = async {
 					runInterruptible(backgroundDispatcher) {
 						bitmapDecoderFactory.make().decode(context, source, downSampling)
@@ -1438,11 +1440,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 			try {
 				val bitmap = if (decoder.isReady && tile.isVisible) {
 					runInterruptible(backgroundDispatcher) {
-						debug(
-							"TileLoadTask.doInBackground, tile.sRect=%s, tile.sampleSize=%d",
-							tile.sRect,
-							tile.sampleSize,
-						)
 						decoderLock.readLock().lock()
 						try {
 							if (decoder.isReady) {
@@ -1480,7 +1477,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	@Synchronized
 	private fun onTilesInited(decoder: ImageRegionDecoder, sWidth: Int, sHeight: Int, sOrientation: Int) {
-		debug("onTilesInited sWidth=%d, sHeight=%d, sOrientation=%d", sWidth, sHeight, orientation)
 		// If actual dimensions don't match the declared size, reset everything.
 		if ((sWidth > 0) && (this.sHeight > 0) && (this.sWidth != sWidth || this.sHeight != sHeight)) {
 			reset(false)
@@ -1513,7 +1509,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	@Synchronized
 	private fun onPreviewLoaded(previewBitmap: Bitmap) {
-		debug("onPreviewLoaded")
 		if (bitmap != null || imageLoadedSent) {
 			previewBitmap.recycle()
 			return
@@ -1566,7 +1561,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	 */
 	@Synchronized
 	private fun onImageLoaded(bitmap: Bitmap, sOrientation: Int, bitmapIsCached: Boolean) {
-		debug("onImageLoaded")
 		// If actual dimensions don't match the declared size, reset everything.
 		if (sWidth > 0 && sHeight > 0 && (sWidth != bitmap.width * downSampling || sHeight != bitmap.height * downSampling)) {
 			reset(false)
@@ -1965,7 +1959,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 				}
 			}
 		}
-		if ((debugTextPaint == null || debugLinePaint == null) && isDebug) {
+		if ((debugTextPaint == null || debugLinePaint == null) && isDebugDrawingEnabled) {
 			debugTextPaint = Paint().apply {
 				textSize = px(12).toFloat()
 				color = Color.MAGENTA
@@ -2169,8 +2163,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		public const val ORIGIN_TOUCH: Int = 2
 
 		/** State change originated from a fling momentum anim.  */
-		public const val ORIGIN_FLING: Int =
-			3
+		public const val ORIGIN_FLING: Int = 3
 
 		/** State change originated from a double tap zoom anim.  */
 		public const val ORIGIN_DOUBLE_TAP_ZOOM: Int = 4
@@ -2178,17 +2171,6 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 		public const val RESTORE_STRATEGY_NONE: Int = 0
 		public const val RESTORE_STRATEGY_IMMEDIATE: Int = 1
 		public const val RESTORE_STRATEGY_DEFERRED: Int = 2
-
-		@JvmStatic
-		@set:JvmName("setDebug")
-		public var isDebug: Boolean = false
-
-		@AnyThread
-		private fun debug(message: String, vararg args: Any?) {
-			if (isDebug) {
-				Log.d(TAG, String.format(message, *args))
-			}
-		}
 
 		// A global preference for bitmap format, available to decoder classes that respect it
 		@JvmStatic

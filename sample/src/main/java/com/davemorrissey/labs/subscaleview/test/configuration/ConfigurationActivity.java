@@ -93,7 +93,7 @@ public class ConfigurationActivity extends AbstractPagesActivity {
 		} else {
 			view.setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_INSIDE);
 		}
-		SubsamplingScaleImageView.setDebug(page == 9);
+//		SubsamplingScaleImageView.setDebug(page == 9);
 		if (page == 2) {
 			view.setScaleAndCenter(0f, new PointF(3900, 3120));
 			view.setPanEnabled(false);
