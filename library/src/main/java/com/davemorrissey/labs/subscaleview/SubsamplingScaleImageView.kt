@@ -271,7 +271,7 @@ public open class SubsamplingScaleImageView @JvmOverloads constructor(
 	public var regionDecoderFactory: DecoderFactory<out ImageRegionDecoder> = SkiaImageRegionDecoder.Factory()
 
 	// Debug values
-	private val isDebugDrawingEnabled: Boolean
+	protected val isDebugDrawingEnabled: Boolean
 		get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 			isShowingLayoutBounds
 		} else {
