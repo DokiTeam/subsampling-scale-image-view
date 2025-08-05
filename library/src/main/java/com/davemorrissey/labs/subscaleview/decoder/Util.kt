@@ -25,6 +25,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.nio.file.Files
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
 
@@ -125,11 +126,17 @@ internal fun ImageSource.toUri(context: Context): Uri = when (this) {
 @Throws(Exception::class)
 internal fun detectImageFormat(context: Context, uri: Uri): String? = when (uri.scheme) {
 	URI_SCHEME_RES -> "resource"
-	URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
-		val entry = file.getEntry(uri.fragment)
-		MimeTypeMap.getSingleton().getMimeTypeFromExtension(entry.name.substringAfterLast('.', ""))
-			?: file.getInputStream(entry).use { input ->
-				HttpURLConnection.guessContentTypeFromStream(input)
+	URI_SCHEME_ZIP -> uri.fragment?.let { entryName ->
+		MimeTypeMap.getSingleton().getMimeTypeFromExtension(entryName.substringAfterLast('.', ""))
+			?: ZipFile(uri.schemeSpecificPart).use { file ->
+				val entry: ZipEntry? = file.getEntry(entryName)
+				if (entry != null) {
+					file.getInputStream(entry).use { input ->
+						HttpURLConnection.guessContentTypeFromStream(input)
+					}
+				} else {
+					null
+				}
 			}
 	}
 

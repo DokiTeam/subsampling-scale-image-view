@@ -32,7 +32,9 @@ public class SkiaImageDecoder @JvmOverloads constructor(
 			URI_SCHEME_RES -> decodeResource(context, uri, options)
 
 			URI_SCHEME_ZIP -> ZipFile(uri.schemeSpecificPart).use { file ->
-				val entry = file.getEntry(uri.fragment)
+				val entry = requireNotNull(file.getEntry(uri.fragment)) {
+					"Entry ${uri.fragment} not found in the zip"
+				}
 				file.getInputStream(entry).use { input ->
 					BitmapFactory.decodeStream(input, null, options)
 				}
